@@ -1,11 +1,16 @@
-#ifndef IMAGE_H
-#define IMAGE_H
+#ifndef COVER_H
+#define COVER_H
 
 #include <string>
 #include <filesystem>
 
-namespace core
-{
+/**
+ * \file cover.h
+ * \brief Defines the Cover class representing images associated with a movie.
+ */
+
+namespace core::data {
+
     /**
      * \brief Represents an image associated with a movie.
      *
@@ -66,6 +71,7 @@ namespace core
         std::filesystem::path _normal; ///< Path to the normal format image
         std::filesystem::path _square; ///< Path to the square format image
     };
-} // namespace fc
 
-#endif // IMAGE_H
+} // namespace core::data
+
+#endif // COVER_H

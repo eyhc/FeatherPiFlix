@@ -1,7 +1,7 @@
 #include "core/cover.h"
 
 using namespace std;
-using namespace core;
+using namespace core::data;
 
 Cover::Cover()
 {
