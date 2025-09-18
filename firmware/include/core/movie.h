@@ -8,7 +8,7 @@
 #include "cover.h"
 
 /**
- * \file film.h
+ * \file movie.h
  * \brief Defines abstract and concrete movie classes with metadata management.
  */
 
@@ -19,7 +19,7 @@ namespace core::data {
 //----------------------------------------------------
 
     /**
-     * \class MovieBase
+     * \class Movie
      * \brief Abstract base class for movie metadata.
      *
      * Stores and manages the basic information of a movie,
@@ -28,7 +28,7 @@ namespace core::data {
      * Provides abstract methods for synopsis handling,
      * as well as formatting and comparison utilities.
      */
-    class MovieBase {
+    class Movie {
     public:
         // --- Accessors ---
 
@@ -168,7 +168,7 @@ namespace core::data {
          * \param other Another film
          * \return true if they represent the same movie
          */
-        bool equals(const MovieBase &other) const;
+        bool equals(const Movie &other) const;
 
         /**
          * \brief Stringify minimal film info: title, release year, director,
@@ -185,7 +185,7 @@ namespace core::data {
         /**
          * \brief Virtual default destructor needed by unique_ptr.
          */
-        virtual ~MovieBase() = default; 
+        virtual ~Movie() = default; 
 
     protected:
         std::string _title;                ///< Movie title
@@ -206,12 +206,12 @@ namespace core::data {
 
     /**
      * \class FullMovie
-     * \brief Concrete implementation of MovieBase with full metadata.
+     * \brief Concrete implementation of Movie with full metadata.
      *
      * Stores a complete set of information about the movie,
      * including a detailed synopsis.
      */
-    class FullMovie: public MovieBase {
+    class FullMovie: public Movie {
     public:
         /**
          * \brief Construct a movie with full metadata.
@@ -260,7 +260,7 @@ namespace core::data {
      * Stores the main metadata of the movie but loads or stores
      * the synopsis in an external CSV file to reduce memory usage.
      */
-    class LazyMovie: public MovieBase {
+    class LazyMovie: public Movie {
     public:
         /**
          * \brief Construct a lazy movie with minimal metadata.

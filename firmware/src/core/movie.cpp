@@ -11,16 +11,16 @@ using namespace core::data;
 //               BASE MOVIE CLASS
 //----------------------------------------------------
 
-string MovieBase::title() const    { return _title; }
-int MovieBase::year() const        { return _year; }
-string MovieBase::producer() const { return _producer; }
-string MovieBase::category() const { return _category; }
-Cover MovieBase::cover() const     { return _cover; }
-string MovieBase::director() const { return _director; }
-string MovieBase::actors() const   { return _actors; }
-filesystem::path MovieBase::video_file() const { return _video_file; }
-int MovieBase::duration() const    { return _duration; }
-string MovieBase::duration_str() const {
+string Movie::title() const    { return _title; }
+int Movie::year() const        { return _year; }
+string Movie::producer() const { return _producer; }
+string Movie::category() const { return _category; }
+Cover Movie::cover() const     { return _cover; }
+string Movie::director() const { return _director; }
+string Movie::actors() const   { return _actors; }
+filesystem::path Movie::video_file() const { return _video_file; }
+int Movie::duration() const    { return _duration; }
+string Movie::duration_str() const {
     string res;
     if (_duration / 60 != 0)
         res = std::to_string(_duration / 60) + "h ";
@@ -28,20 +28,20 @@ string MovieBase::duration_str() const {
     return res;
 }
 
-void MovieBase::set_year(int year)            { _year = year; }
-void MovieBase::set_producer(string producer) { _producer = producer; }
-void MovieBase::set_category(string category) { _category = category; }
-void MovieBase::set_cover(Cover cover)        { _cover = cover; }
-void MovieBase::set_director(string director) { _director = director; }
-void MovieBase::set_duration(int duration)    { _duration = duration; }
-void MovieBase::set_actors(string actors)     { _actors = actors; }
-void MovieBase::set_video_file(filesystem::path path) { _video_file = path;}
+void Movie::set_year(int year)            { _year = year; }
+void Movie::set_producer(string producer) { _producer = producer; }
+void Movie::set_category(string category) { _category = category; }
+void Movie::set_cover(Cover cover)        { _cover = cover; }
+void Movie::set_director(string director) { _director = director; }
+void Movie::set_duration(int duration)    { _duration = duration; }
+void Movie::set_actors(string actors)     { _actors = actors; }
+void Movie::set_video_file(filesystem::path path) { _video_file = path;}
 
-bool MovieBase::equals(const MovieBase &m) const {
+bool Movie::equals(const Movie &m) const {
     return _title.compare(m._title) == 0;
 }
 
-string MovieBase::to_string() const {
+string Movie::to_string() const {
     string res = _title;
     if (! _director.empty())
         res += " - " + _director;
@@ -55,7 +55,7 @@ string MovieBase::to_string() const {
     return res;
 }
 
-void MovieBase::print_full() const {
+void Movie::print_full() const {
     cout << "titre: " << _title << endl;
     cout << "date: " << _year << endl;
     cout << "duration: " << _duration << " (" << duration_str() << ")" << endl;
