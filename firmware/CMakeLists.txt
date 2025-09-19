@@ -5,7 +5,7 @@ project(featherpiflix_firmware LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options(-Wall -Wextra -Werror -Wpedantic -O3)
+add_compile_options(-Wall -Wextra -Werror -Wpedantic -O3 -g)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
@@ -21,43 +21,46 @@ macro(find_and_require_library LIB_NAME)
     link_libraries(${LIB_NAME})
 endmacro()
 
-find_and_require_library(csv)
+SET(REQUIRED_LIBS
+    csv
+    gd
+    curl
+)
+
+foreach(LIB IN LISTS REQUIRED_LIBS)
+    find_and_require_library(${LIB})
+endforeach()
 
 ###### CORE PACKAGE ######
 
-set(FC_SOURCES
+set(CORE_SOURCES
     src/core/cover.cpp
     src/core/movie.cpp
     src/core/csv.cpp
 #    src/core/catalog.cpp
     src/core/sort.cpp
+    src/core/img_format.cpp
 )
 
-add_library(fc STATIC ${FC_SOURCES})
+add_library(core STATIC ${CORE_SOURCES})
 
 ###### TESTS ######
 
-add_executable(test_data tests/test_data.cpp)
-target_link_libraries(test_data PRIVATE fc)
-
-add_executable(test_csv tests/test_csv.cpp)
-target_link_libraries(test_csv PRIVATE fc)
-
-#add_executable(test_catalog tests/test_catalog.cpp)
-#target_link_libraries(test_catalog PRIVATE fc)
-
-add_executable(test_sort tests/test_sort.cpp)
-target_link_libraries(test_sort PRIVATE fc)
-
-add_executable(test_selection tests/test_selection.cpp)
-target_link_libraries(test_selection PRIVATE fc)
-
 enable_testing()
-add_test(NAME csv COMMAND test_csv)
-add_test(NAME data COMMAND test_data)
-add_test(NAME sort COMMAND test_sort)
-add_test(NAME selection COMMAND test_selection)
-#add_test(NAME catalog COMMAND test_catalog)
+set(CORE_TESTS
+    data
+    csv 
+#    catalog 
+    sort 
+    selection
+    img_format
+)
+
+foreach(T IN LISTS CORE_TESTS)
+    add_executable(test_${T} tests/test_${T}.cpp)
+    target_link_libraries(test_${T} PRIVATE core)
+    add_test(NAME ${T} COMMAND test_${T})
+endforeach()
 
 ###### MAIN PROGRAM #####
 
