@@ -37,7 +37,7 @@ set(CORE_SOURCES
     src/core/cover.cpp
     src/core/movie.cpp
     src/core/csv.cpp
-#    src/core/catalog.cpp
+    src/core/catalog.cpp
     src/core/sort.cpp
     src/core/img_format.cpp
 )
@@ -50,7 +50,7 @@ enable_testing()
 set(CORE_TESTS
     data
     csv 
-#    catalog 
+    catalog 
     sort 
     selection
     img_format

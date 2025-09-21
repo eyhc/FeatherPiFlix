@@ -66,7 +66,7 @@ void core::csv::read(std::istream &in, row_callback on_row) {
         if (csv_fini(&p, field_cb, row_cb, &ctx) != 0)
             throw std::runtime_error(csv_strerror(csv_error(&p)));
     }
-    catch(const FoundException&) { /*do nothing, just stop parsing*/ }
+    catch(const FoundException&) { /* do nothing, just stop parsing */ }
 }
 
 

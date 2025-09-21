@@ -56,7 +56,7 @@ string Movie::to_string() const {
 }
 
 void Movie::print_full() const {
-    cout << "titre: " << _title << endl;
+    cout << "title: " << _title << endl;
     cout << "date: " << _year << endl;
     cout << "duration: " << _duration << " (" << duration_str() << ")" << endl;
     cout << "category: " << _category << endl;
