@@ -102,6 +102,12 @@ namespace core::data {
         // --- Mutators ---
 
         /**
+         * \brief Set the title of the movie.
+         * \param year New title.
+         */
+        void set_title(const std::string title);
+
+        /**
          * \brief Set the release year of the movie.
          * \param year New release year.
          *

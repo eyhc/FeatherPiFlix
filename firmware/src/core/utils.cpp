@@ -1,6 +1,6 @@
 #include <csv.h>
 
-#include "core/csv.h"
+#include "core/utils.h"
 
 using namespace std;
 using namespace core;
@@ -184,4 +184,39 @@ void csv::edit_field(
         read(in, callback);
     }
     catch(const std::exception& e) { /* Ignore exceptions */ }
+}
+
+//----------------------------------------------------------------------------
+
+string core::slug(const string &src) {
+    // List of special characters to replace
+    string old = "àâäéèëêîïùûüöôŷÿç";
+    // Corresponding replacement characters
+    string nw  = "aaaeeeeiiuuuooyyc";
+
+    // First pass: replace special characters with ASCII equivalents
+    string res = "";
+    for (size_t i = 0; i < src.size(); i++) {
+        size_t j = 0;
+        for (; j < old.size(); j+=2) {
+            // Check if current and next char match a special character pair
+            if (i != src.size()-1 && src[i] == old[j] && src[i+1] == old[j+1]) {
+                res += nw[j/2]; // Replace with corresponding ASCII char
+                i++;            // skip the next half-letter
+                break;
+            }
+        }
+
+        // If no replacement was made, keep the original character
+        if (j == old.size()) res += src[i];
+    }
+    
+    // Second pass: lowercase all char and replace non-alphanumeric with '_'
+    for (size_t i = 0; i < res.size(); i++) {
+        res[i] = tolower(res[i]);
+        if ((res[i] < 'a' || 'z' < res[i]) && (res[i] < '0' || '9' < res[i]))
+            res[i] = '_';
+    }
+    
+    return res;
 }

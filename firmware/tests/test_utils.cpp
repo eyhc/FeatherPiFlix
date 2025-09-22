@@ -1,4 +1,4 @@
-#include "core/csv.h"
+#include "core/utils.h"
 
 #include <iostream>
 #include <sstream>
@@ -141,11 +141,22 @@ void test_edit_field() {
     assert(counter == 12);
 }
 
+void test_slug() {
+    string s = "il était une fois !";
+    s = slug(s);
+    assert(s == "il_etait_une_fois__");
+
+    s = "Et PoUrTaNt (Il N'AiMe pAs çA !)";
+    s = slug(s);
+    assert(s == "et_pourtant__il_n_aime_pas_ca___");
+}
+
 int main(void) {
     test_write();
     test_read();
     test_get_field();
     test_edit_field();
+    test_slug();
 
     cout << "TEST CSV : OK" << endl;
     return 0;

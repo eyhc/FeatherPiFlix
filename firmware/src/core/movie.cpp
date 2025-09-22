@@ -2,7 +2,7 @@
 #include <fstream>
 
 #include "core/movie.h"
-#include "core/csv.h"
+#include "core/utils.h"
 
 using namespace std;
 using namespace core::data;
@@ -28,6 +28,7 @@ string Movie::duration_str() const {
     return res;
 }
 
+void Movie::set_title(string title)       { _title = title; }
 void Movie::set_year(int year)            { _year = year; }
 void Movie::set_producer(string producer) { _producer = producer; }
 void Movie::set_category(string category) { _category = category; }

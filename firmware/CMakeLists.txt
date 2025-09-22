@@ -25,6 +25,7 @@ SET(REQUIRED_LIBS
     csv
     gd
     curl
+    xapian
 )
 
 foreach(LIB IN LISTS REQUIRED_LIBS)
@@ -36,10 +37,11 @@ endforeach()
 set(CORE_SOURCES
     src/core/cover.cpp
     src/core/movie.cpp
-    src/core/csv.cpp
+    src/core/utils.cpp
     src/core/catalog.cpp
     src/core/sort.cpp
     src/core/img_format.cpp
+    src/core/search.cpp
 )
 
 add_library(core STATIC ${CORE_SOURCES})
@@ -49,11 +51,12 @@ add_library(core STATIC ${CORE_SOURCES})
 enable_testing()
 set(CORE_TESTS
     data
-    csv 
+    utils 
     catalog 
     sort 
     selection
     img_format
+    search
 )
 
 foreach(T IN LISTS CORE_TESTS)
