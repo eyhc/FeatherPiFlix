@@ -61,7 +61,7 @@ namespace core::csv {
      * \brief Write a single row to a CSV output stream.
      *
      * Fields are written separated by commas, with proper escaping using 
-     * previous csv::write_field method.
+     * previous \c write_field method.
      *
      * \param out The output stream to write to.
      * \param fields Vector of strings representing the row's fields.
