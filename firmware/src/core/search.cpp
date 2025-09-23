@@ -12,6 +12,7 @@ search::Indexer::Indexer(const string &db_path, const string &lang):
 }
 
 search::Indexer::~Indexer() {
+    _db.commit();
     _db.close();
 }
 

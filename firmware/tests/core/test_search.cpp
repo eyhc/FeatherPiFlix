@@ -122,6 +122,7 @@ int main(void) {
     assert(res[0].first == "La Fin du jour");
     assert(res[1].first == "La Trilogie Marseillaise : Fanny");
 
+    delete index;
     filesystem::remove_all("./index_db");
 
     cout << "TEST_SEARCH: OK" << endl;

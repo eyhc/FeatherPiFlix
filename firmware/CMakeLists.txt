@@ -50,20 +50,37 @@ add_library(core STATIC ${CORE_SOURCES})
 
 enable_testing()
 set(CORE_TESTS
-    data
-    utils 
-    catalog 
-    sort 
-    selection
-    img_format
-    search
+    core/test_data
+    core/test_utils 
+    core/test_catalog 
+    core/test_sort 
+    core/test_selection
+    core/test_img_format
+    core/test_search
 )
 
+find_program(VALGRIND_EXECUTABLE valgrind)
 foreach(T IN LISTS CORE_TESTS)
-    add_executable(test_${T} tests/test_${T}.cpp)
-    target_link_libraries(test_${T} PRIVATE core)
-    add_test(NAME ${T} COMMAND test_${T})
+    string(REPLACE "/" "_" T_NORM ${T})
+    add_executable(${T_NORM} tests/${T}.cpp)
+    target_link_libraries(${T_NORM} PRIVATE core)
+    string(REGEX REPLACE ".*/" "" T_EXEC ${T})
+    string(REGEX REPLACE "/.*" "" LABEL ${T})
+    add_test(NAME ${T} COMMAND ./${T_EXEC})
+    set_tests_properties(${T} PROPERTIES LABELS ${LABEL})
 endforeach()
+
+find_program(VALGRIND_EXECUTABLE valgrind)
+foreach(T IN LISTS CORE_TESTS)
+    if(VALGRIND_EXECUTABLE AND NOT T STREQUAL "core/test_search")
+        string(REGEX REPLACE ".*/" "" T_EXEC ${T})
+        add_test(NAME valgrind_${T_EXEC}
+                 COMMAND ${VALGRIND_EXECUTABLE} --leak-check=full
+                 --error-exitcode=2 ./${T_EXEC})
+        set_tests_properties(valgrind_${T_EXEC} PROPERTIES LABELS valgrind)
+    endif()
+endforeach()
+
 
 ###### MAIN PROGRAM #####
 
