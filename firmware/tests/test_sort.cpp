@@ -6,19 +6,19 @@
 using namespace std;
 using namespace core;
 
-data::FullMovie m1 = data::FullMovie(
-    "ABCDtitre", 2020, "prodo", "humour", data::Cover(),
-    "reatis", "aucuns", "", 101, ".."
+data::Movie m1 = data::Movie(
+    "ABCDtitre", 2020, "humour", "prodo", "reatis", "aucuns", 
+    101, "", data::Cover(), ".."
 );
 
-data::FullMovie m2 = data::FullMovie(
-    "EFGH", 2020, "prodo", "drame", data::Cover(),
-    "reatis", "aucuns", "", 101, ".."
+data::Movie m2 = data::Movie(
+    "EFGH", 2020, "drame", "prodo", "reatis", "aucuns",
+    101, "", data::Cover(), ".."
 );
 
-data::FullMovie m3 = data::FullMovie(
-    "ABCDEFGtitre", 2011, "prodos", "humour", data::Cover(),
-    "reatos", "merde", "", 202, ".."
+data::Movie m3 = data::Movie(
+    "ABCDEFGtitre", 2011, "humour", "prodos", "reatos", "merde", 
+    202, "", data::Cover(), ".."
 );
 
 vector<data::Movie *> vm = {&m1, &m2, &m3};

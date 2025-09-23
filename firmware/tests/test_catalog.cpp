@@ -7,16 +7,16 @@ using namespace std;
 using namespace core;
 
 void test_basic_catalog() {
-    unique_ptr<data::Movie> m1 = make_unique<data::FullMovie>(
-        "f1", 0, "", "", data::Cover(), "", "", "", 0, "");
-    unique_ptr<data::Movie> m2 = make_unique<data::FullMovie>(
-        "f2", 0, "", "", data::Cover(), "", "", "", 0, "");
-    unique_ptr<data::Movie> m3 = make_unique<data::FullMovie>(
-        "f3", 0, "", "", data::Cover(), "", "", "", 0, "");
-    unique_ptr<data::Movie> m4 = make_unique<data::FullMovie>(
-        "f4", 0, "", "", data::Cover(), "", "", "", 0, "");
-    unique_ptr<data::Movie> m5 = make_unique<data::FullMovie>(
-        "f5", 0, "", "", data::Cover(), "", "", "", 0, "");
+    unique_ptr<data::Movie> m1 = make_unique<data::Movie>(
+        "f1", 0, "", "", "", "", 0, "", data::Cover(), "");
+    unique_ptr<data::Movie> m2 = make_unique<data::Movie>(
+        "f2", 0, "", "", "", "", 0, "", data::Cover(), "");
+    unique_ptr<data::Movie> m3 = make_unique<data::Movie>(
+        "f3", 0, "", "", "", "", 0, "", data::Cover(), "");
+    unique_ptr<data::Movie> m4 = make_unique<data::Movie>(
+        "f4", 0, "", "", "", "", 0, "", data::Cover(), "");
+    unique_ptr<data::Movie> m5 = make_unique<data::Movie>(
+        "f5", 0, "", "", "", "", 0, "", data::Cover(), "");
 
     data::Movie* m3_ptr = m3.get();
 
@@ -44,16 +44,16 @@ void test_basic_catalog() {
 }
 
 void test_cached_catalog() {
-    unique_ptr<data::Movie> m1 = make_unique<data::FullMovie>(
-        "f1", 0, "", "", data::Cover(), "", "", "synopsis1", 10, "");
-    unique_ptr<data::Movie> m2 = make_unique<data::FullMovie>(
-        "f2", 0, "", "", data::Cover(), "", "", "synopsis2", 20, "");
-    unique_ptr<data::Movie> m3 = make_unique<data::FullMovie>(
-        "f3", 0, "", "", data::Cover(), "", "", "synopsis3", 30, "");
-    unique_ptr<data::Movie> m4 = make_unique<data::FullMovie>(
-        "f4", 0, "", "", data::Cover(), "", "", "synopsis4", 40, "");
-    unique_ptr<data::Movie> m5 = make_unique<data::FullMovie>(
-        "f5", 0, "", "", data::Cover(), "", "", "synopsis5", 50, "");
+    unique_ptr<data::Movie> m1 = make_unique<data::Movie>(
+        "f1", 0, "", "", "", "", 10, "synopsis1", data::Cover(), "");
+    unique_ptr<data::Movie> m2 = make_unique<data::Movie>(
+        "f2", 0, "", "", "", "", 20, "synopsis2", data::Cover(), "");
+    unique_ptr<data::Movie> m3 = make_unique<data::Movie>(
+        "f3", 0, "", "", "", "", 30, "synopsis3", data::Cover(), "");
+    unique_ptr<data::Movie> m4 = make_unique<data::Movie>(
+        "f4", 0, "", "", "", "", 40, "synopsis4", data::Cover(), "");
+    unique_ptr<data::Movie> m5 = make_unique<data::Movie>(
+        "f5", 0, "", "", "", "", 50, "synopsis5", data::Cover(), "");
 
     BasicCatalog c;
     c.add(move(m1));
@@ -99,8 +99,8 @@ void test_paged_cached_catalog() {
     for (size_t i = 0; i < 52; i++) {
         string title = "f" + to_string(i);
         string synopsis = "synopsis" + to_string(i);
-        unique_ptr<data::Movie> m = make_unique<data::FullMovie>(
-            title, 0, "", "", data::Cover(), "", "", synopsis, i*2, "");
+        unique_ptr<data::Movie> m = make_unique<data::Movie>(
+            title, 0, "", "",  "", "", i*2, synopsis, data::Cover(), "");
 
         c.add(move(m));
     }

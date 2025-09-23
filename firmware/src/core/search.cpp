@@ -30,16 +30,13 @@ void search::Indexer::add(const data::Movie *f) {
 
     doc.set_data(f->title());
 
-    const auto s = f->synopsis();
-    const auto synopsis = (s.has_value()) ? s.value() : "";
-
     _termgen.index_text(f->title(),           5); _termgen.increase_termpos();
     _termgen.index_text(f->category(),        3); _termgen.increase_termpos();
     _termgen.index_text(to_string(f->year()), 1); _termgen.increase_termpos();
     _termgen.index_text(f->director(),        2); _termgen.increase_termpos();
     _termgen.index_text(f->producer(),        2); _termgen.increase_termpos();
     _termgen.index_text(f->actors(),          4); _termgen.increase_termpos();
-    _termgen.index_text(synopsis,             1);
+    _termgen.index_text(f->synopsis(),        1);
 
     std::string unique_id = "Q" + slug(f->title());
     doc.add_boolean_term(unique_id);

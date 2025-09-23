@@ -21,9 +21,9 @@ void test_cover() {
 }
 
 void test_movie_accessors() {
-    data::FullMovie m(
-        "flix", 2015, "toto", "drama", data::Cover("path1.png", "path2.png"),
-        "titi", "", "empty movie", 135, "data/movie.mp4"
+    data::Movie m(
+        "flix", 2015, "drama", "toto", "titi", "", 135, "empty movie",
+        data::Cover("path1.png", "path2.png"), "data/movie.mp4"
     );
 
     assert(m.title() == "flix");
@@ -41,22 +41,22 @@ void test_movie_accessors() {
 }
 
 void test_movie_to_string() {
-    data::FullMovie m(
-        "Flix", 2015, "", "drama", data::Cover("path1.png", "path2.png"),
-        "toto", "", "empty movie", 135, "data/movie.mp4"
+    data::Movie m(
+        "Flix", 2015, "drama", "toto", "titi", "", 135, "empty movie",
+        data::Cover("path1.png", "path2.png"), "data/movie.mp4"
     );
 
-    assert(m.to_string() == "Flix - toto - drama - 2015");
+    assert(m.to_string() == "Flix - titi - toto - drama - 2015");
 
-    m.set_producer("titi");
+    m.set_producer("tyty");
     m.set_director("");
-    assert(m.to_string() == "Flix - titi - drama - 2015");
+    assert(m.to_string() == "Flix - tyty - drama - 2015");
 }
 
 void test_movie_mutators() {
-    data::FullMovie m(
-        "flix", 2015, "toto", "drama", data::Cover("path1.png", "path2.png"),
-        "titi", "", "empty movie", 135, "data/movie.mp4"
+    data::Movie m(
+        "Flix", 2015, "drama", "toto", "titi", "tutu, tete", 135, "empty movie",
+        data::Cover("path1.png", "path2.png"), "data/movie.mp4"
     );
 
     string long_summary = "abcdefghijklmnopqrstuvwxyz012_\
@@ -74,7 +74,7 @@ void test_movie_mutators() {
     m.set_duration(25);
     m.set_video_file("movie2.mp4");
 
-    assert(m.title() == "flix");
+    assert(m.title() == "Flix");
     assert(m.year() == 1850);
     assert(m.producer() == "tata");
     assert(m.category() == "comedy");
@@ -89,24 +89,24 @@ void test_movie_mutators() {
 }
 
 void test_movie_equality() {
-    data::FullMovie m(
-        "Flix", 2015, "", "drama", data::Cover("path1.png", "path2.png"),
-        "toto", "", "empty movie", 135, "data/movie.mp4"
+    data::Movie m(
+        "Flix", 2015, "drama", "toto", "titi", "tutu, tete", 135, "empty movie",
+        data::Cover("path1.png", "path2.png"), "data/movie.mp4"
     );
 
     assert(m.equals(m));
 
-    data::FullMovie m2(
-        "Flix", 2015, "", "drama", data::Cover("path1.png", "path2.png"),
-        "toto", "", "empty movie", 135, "data/movie.mp4"
+    data::Movie m2(
+        "Flix", 2015, "drama", "toto", "titi", "tutu, tete", 135, "empty movie",
+        data::Cover("path1.png", "path2.png"), "data/movie.mp4"
     );
 
     assert(&m != &m2);
     assert(m.equals(m2));
 
-    data::FullMovie m3(
-        "PiFlix", 2015, "", "drama", data::Cover("path1.png", "path2.png"),
-        "toto", "", "empty movie", 135, "data/movie.mp4"
+    data::Movie m3(
+        "PiFlix", 2015, "drama", "toto", "titi", "tutu, tete", 135, "empty movie",
+        data::Cover("path1.png", "path2.png"), "data/movie.mp4"
     );
     assert(!m3.equals(m));
 }
@@ -137,16 +137,25 @@ void test_lazy_synopsis() {
     out.close();
 
     /// create lazy movies with previous file
-    auto f1 = data::LazyMovie(
-        "f1", 2015, "", "", data::Cover(), "", "", file, 10, "");
-    auto f2 = data::LazyMovie(
-        "f2", 2015, "", "", data::Cover(), "", "", file, 10, "");
-    auto f3 = data::LazyMovie(
-        "f3", 2015, "", "", data::Cover(), "", "", file, 10, "");
-    auto f4 = data::LazyMovie(
-        "f4", 2015, "", "", data::Cover(), "", "", file2, 10, "");
-    auto f5 = data::LazyMovie(
-        "f5", 2015, "", "", data::Cover(), "", "", file2, 10, "");
+    auto s = make_unique<data::CSVFileSynopsisProvider>("f1", file);
+    auto f1 = data::Movie(
+        "f1", 2015, "", "", "", "", 10, move(s), data::Cover(), "");
+
+    s = make_unique<data::CSVFileSynopsisProvider>("f2", file);
+    auto f2 = data::Movie(
+        "f2", 2015, "", "", "", "", 10, move(s), data::Cover(), "");
+
+    s = make_unique<data::CSVFileSynopsisProvider>("f3", file);
+    auto f3 = data::Movie(
+        "f3", 2015, "", "", "", "", 10, move(s), data::Cover(), "");
+
+    s = make_unique<data::CSVFileSynopsisProvider>("f4", file2);
+    auto f4 = data::Movie(
+        "f4", 2015, "", "", "", "", 10, move(s), data::Cover(), "");
+
+    s = make_unique<data::CSVFileSynopsisProvider>("f5", file2);
+    auto f5 = data::Movie(
+        "f5", 2015, "", "", "", "", 10, move(s), data::Cover(), "");
 
     // check synopsis correctness
     assert(f1.synopsis() == synopsis1);
@@ -161,6 +170,17 @@ void test_lazy_synopsis() {
     remove(file2.c_str());
 }
 
+void test_change_provider() {
+    unique_ptr<data::SynopsisProvider> s = 
+        make_unique<data::DirectSynopsisProvider>("synopsis1");
+    data::Movie m("f", 1925, "", "", "", "", 37, move(s), data::Cover(), "");
+    assert(m.synopsis() == "synopsis1");
+
+    s = make_unique<data::DirectSynopsisProvider>("synopsis2");
+    m.change_synopsis_provider(move(s));
+    assert(m.synopsis() == "synopsis2");
+}
+
 int main(void) {
     test_cover();
     test_movie_accessors();
@@ -168,6 +188,7 @@ int main(void) {
     test_movie_mutators();
     test_movie_equality();
     test_lazy_synopsis();
+    test_change_provider();
 
     cout << "TEST DATA : OK"  << endl;
     return 0;

@@ -17,7 +17,7 @@ using namespace core;
 
 // Parse a CSV file and build FullMovie objects.
 // For each row, call the provided function f(movie).
-static void parse_csv(string filename, function<void(data::FullMovie)> f) {
+static void parse_csv(string filename, function<void(data::Movie&)> f) {
     ifstream in(filename);
 
     // Column indexes (initialized to -1 before header parsing)
@@ -83,18 +83,19 @@ static void parse_csv(string filename, function<void(data::FullMovie)> f) {
 
         // For each data row, create a FullMovie and call callback
         else  {
-            f(data::FullMovie(
+            data::Movie m = data::Movie(
                 row[title_index],
                 atoi(row[year_index].c_str()),
+                row[category_index],
                 row[producer_index],
-                row[category_index], 
-                data::Cover(row[cover_normal_index], row[cover_square_index]),
                 row[director_index],
                 row[actors_index],
-                row[synopsis_index],
                 atoi(row[duration_index].c_str()),
+                row[synopsis_index],
+                data::Cover(row[cover_normal_index], row[cover_square_index]),
                 row[video_file_index]
-            ));
+            );
+            f(m);
         }
     };
 
@@ -114,8 +115,8 @@ static void parse_csv(string filename, function<void(data::FullMovie)> f) {
 BasicCatalog::BasicCatalog() = default;
 
 BasicCatalog::BasicCatalog(const string& filename) {
-    parse_csv(filename, [&](data::FullMovie m)->void {
-            add(make_unique<data::FullMovie>(m));
+    parse_csv(filename, [&](data::Movie &m)->void {
+            add(make_unique<data::Movie>(m));
         }
     );
 }
@@ -184,8 +185,6 @@ void BasicCatalog::save(const string &filename) const {
     // write all movies
     for (auto &mv: _data) {
         data::Movie *movie = mv.get();
-        string synopsis = movie->synopsis().has_value() ?
-                            movie->synopsis().value() : "";
         csv::write_row(out, {
             movie->title(),
             to_string(movie->year()),
@@ -194,7 +193,7 @@ void BasicCatalog::save(const string &filename) const {
             movie->producer(),
             to_string(movie->duration()),
             movie->actors(),
-            synopsis,
+            movie->synopsis(),
             movie->video_file().generic_string(),
             movie->cover().normal_path().generic_string(),
             movie->cover().square_path().generic_string()
@@ -218,21 +217,22 @@ CachedCatalog::CachedCatalog(const string &filename, size_t cache_size):
 {
     _cache.reserve(cache_size);
 
-    parse_csv(filename, [&](data::FullMovie m)->void {
-            add(make_unique<data::LazyMovie>(
-                m.title(),
-                m.year(),
-                m.producer(),
-                m.category(),
-                m.cover(),
-                m.director(),
-                m.actors(),
-                filename,
-                m.duration(),
-                m.video_file()
-            ));
-        }
-    );
+    parse_csv(filename, [&](data::Movie &m)->void {
+        unique_ptr<data::SynopsisProvider> s =
+            make_unique<data::CSVFileSynopsisProvider>(m.title(), filename);
+        add(make_unique<data::Movie>(
+            m.title(),
+            m.year(),
+            m.category(),
+            m.producer(),
+            m.director(),
+            m.actors(),
+            m.duration(),
+            move(s),
+            m.cover(),
+            m.video_file()
+        ));
+    });
 }
 
 void CachedCatalog::remove(const string &title) {
@@ -289,21 +289,22 @@ PagedCachedCatalog::PagedCachedCatalog(size_t cache_size):
 PagedCachedCatalog::PagedCachedCatalog(
     const string &filename, size_t cache_size
 ): _cache_size(cache_size) {
-    parse_csv(filename, [&](data::FullMovie m)->void {
-            add(make_unique<data::LazyMovie>(
-                m.title(),
-                m.year(),
-                m.producer(),
-                m.category(),
-                m.cover(),
-                m.director(),
-                m.actors(),
-                filename,
-                m.duration(),
-                m.video_file()
-            ));
-        }
-    );
+    parse_csv(filename, [&](data::Movie &m)->void {
+        unique_ptr<data::SynopsisProvider> s =
+            make_unique<data::CSVFileSynopsisProvider>(m.title(), filename);
+        add(make_unique<data::Movie>(
+            m.title(),
+            m.year(),
+            m.category(),
+            m.producer(),
+            m.director(),
+            m.actors(),
+            m.duration(),
+            move(s),
+            m.cover(),
+            m.video_file()
+        ));
+    });
 }
 
 bool PagedCachedCatalog::is_cached(const string &title) {
@@ -339,7 +340,8 @@ optional<string> PagedCachedCatalog::get_synopsis_using_cache(
 
     // 5. fallback: ask movie directly
     auto m = get_movie(title);
-    return (m) ? m->synopsis() : nullopt; 
+    if (m) return m->synopsis();
+    else return nullopt; 
 }
 
 optional<unordered_map<string, string>> PagedCachedCatalog::get_page(size_t index) {
@@ -371,7 +373,7 @@ void PagedCachedCatalog::load_page(size_t index) {
     }
     
     // 3. parse CSV to fill synopses
-    parse_csv(filename, [&temp_page](data::FullMovie m) -> void {
+    parse_csv(filename, [&temp_page](data::Movie &m) -> void {
         if (temp_page.count(m.title())) {
             temp_page[m.title()] = m.synopsis();
         }

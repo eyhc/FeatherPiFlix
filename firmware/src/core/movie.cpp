@@ -8,8 +8,39 @@ using namespace std;
 using namespace core::data;
 
 //----------------------------------------------------
-//               BASE MOVIE CLASS
+//                   MOVIE
 //----------------------------------------------------
+
+Movie::Movie(
+    const string &title, int year, const string &category, 
+    const string &producer, const string &director, const string &actors,
+    int duration, unique_ptr<SynopsisProvider> s_provider,
+    const Cover &cover, const filesystem::path &video_file
+): 
+    _title(title), _year(year), _category(category), _producer(producer),
+    _director(director), _actors(actors), _duration(duration),
+    _synopsis(move(s_provider)), _cover(cover), _video_file(video_file) {}
+
+Movie::Movie(
+    const string &title, int year, const string &category, 
+    const string &producer, const string &director,
+    const string &actors, int duration, const string &synopsis, 
+    const Cover &cover, const filesystem::path &video_file
+): 
+    _title(title), _year(year), _category(category), _producer(producer),
+    _director(director), _actors(actors), _duration(duration), _cover(cover),
+    _video_file(video_file)
+{
+    _synopsis = make_unique<DirectSynopsisProvider>(synopsis);
+}
+
+Movie::Movie(const Movie &m): 
+    _title(m._title), _year(m._year), _category(m._category), 
+    _producer(m._producer), _director(m._director), _actors(m._actors), 
+    _duration(m._duration), _cover(m._cover), _video_file(m._video_file)
+{
+    _synopsis = make_unique<DirectSynopsisProvider>(m.synopsis());
+}
 
 string Movie::title() const    { return _title; }
 int Movie::year() const        { return _year; }
@@ -18,6 +49,7 @@ string Movie::category() const { return _category; }
 Cover Movie::cover() const     { return _cover; }
 string Movie::director() const { return _director; }
 string Movie::actors() const   { return _actors; }
+string Movie::synopsis() const { return _synopsis.get()->get_synopsis(); }
 filesystem::path Movie::video_file() const { return _video_file; }
 int Movie::duration() const    { return _duration; }
 string Movie::duration_str() const {
@@ -28,15 +60,21 @@ string Movie::duration_str() const {
     return res;
 }
 
-void Movie::set_title(string title)       { _title = title; }
-void Movie::set_year(int year)            { _year = year; }
-void Movie::set_producer(string producer) { _producer = producer; }
-void Movie::set_category(string category) { _category = category; }
-void Movie::set_cover(Cover cover)        { _cover = cover; }
-void Movie::set_director(string director) { _director = director; }
-void Movie::set_duration(int duration)    { _duration = duration; }
-void Movie::set_actors(string actors)     { _actors = actors; }
-void Movie::set_video_file(filesystem::path path) { _video_file = path;}
+void Movie::set_year(int year)                   { _year = year; }
+void Movie::set_producer(const string &producer) { _producer = producer; }
+void Movie::set_category(const string &category) { _category = category; }
+void Movie::set_cover(const Cover &cover)        { _cover = cover; }
+void Movie::set_director(const string &director) { _director = director; }
+void Movie::set_duration(int duration)           { _duration = duration; }
+void Movie::set_actors(const string &actors)     { _actors = actors; }
+void Movie::set_synopsis(const string &synopsis) { 
+    _synopsis.get()->set_synopsis(synopsis);
+}
+void Movie::set_video_file(const filesystem::path &path) { _video_file = path; }
+
+void Movie::change_synopsis_provider(unique_ptr<SynopsisProvider> p) {
+    _synopsis = move(p);
+}
 
 bool Movie::equals(const Movie &m) const {
     return _title.compare(m._title) == 0;
@@ -67,86 +105,59 @@ void Movie::print_full() const {
     cout << _cover.to_string() << endl;
     cout << "file: " << _video_file << endl;
 
-    auto summary = this->synopsis();
-    if (summary.has_value()) {
-        string short_summary = summary.value();
-        if (short_summary.size() > 100) 
-            short_summary.erase(100, short_summary.size()-100);
-        cout << "synopsis: " << short_summary << "..." << endl;
-    }
+    string short_summary = this->synopsis();
+    if (short_summary.size() > 100) 
+        short_summary.erase(100, short_summary.size()-100);
+    cout << "synopsis: " << short_summary << "..." << endl;
 }
 
 //----------------------------------------------------
-//                FULL MOVIE CLASS
+//                PROVIDERS
 //----------------------------------------------------
 
-FullMovie::FullMovie(string title, int year, string producer, string category, 
-    Cover cover, string director, string actors, string synopsis, int duration, 
-    filesystem::path video_file)
-{
-    _title = title;
-    _year = year;
-    _producer = producer;
-    _category = category;
-    _director = director;
-    _actors = actors;
+DirectSynopsisProvider::DirectSynopsisProvider(const string &synopsis):
+    _synopsis(synopsis) {}
+
+string DirectSynopsisProvider::get_synopsis() const {
+    return _synopsis;
+}
+
+void DirectSynopsisProvider::set_synopsis(const string &synopsis) {
     _synopsis = synopsis;
-    _duration = duration;
-    _cover = cover;
-    _video_file = video_file;
 }
 
-optional<string> FullMovie::synopsis() const { return _synopsis; }
-void FullMovie::set_synopsis(string synopsis) { _synopsis = synopsis; }
+CSVFileSynopsisProvider::CSVFileSynopsisProvider(
+    const string &movie_title, const string &csv_filename
+): _title(movie_title), _csv_file(csv_filename) {}
 
-//----------------------------------------------------
-//                LAZY MOVIE CLASS
-//----------------------------------------------------
-
-LazyMovie::LazyMovie(string title, int year, string producer, string category,
-    Cover cover, string director, string actors, filesystem::path csv_file, 
-    int duration, filesystem::path video_file)
-{
-    _title = title;
-    _year = year;
-    _producer = producer;
-    _category = category;
-    _director = director;
-    _actors = actors;
-    _duration = duration;
-    _cover = cover;
-    _video_file = video_file;
-    _csv_file = csv_file;
-}
-
-optional<string> LazyMovie::synopsis() const {
+string CSVFileSynopsisProvider::get_synopsis() const {
     ifstream fin(_csv_file);
     if (!fin.is_open()) throw runtime_error("Cannot open CSV file");
 
     auto res = csv::get_field(fin, _title, "title", "synopsis");
     fin.close();
-    return res;
+    return (res.has_value()) ? res.value() : "";
 }
 
-void LazyMovie::set_synopsis(string synopsis) {
-    // open csv file
+void CSVFileSynopsisProvider::set_synopsis(const string &synopsis) {
+    // 1. open csv file
     ifstream fin(_csv_file);
     if (!fin.is_open()) throw runtime_error("Cannot open CSV file");
 
-    // create ouptut file as temporary (before renamming)
+    // 2. create ouptut file as temporary (before renamming)
     std::string temp_file = _csv_file + ".tmp";
     std::ofstream fout(temp_file);
     if (!fout.is_open())
         throw std::runtime_error("Cannot open temporary file for writing");
 
-    // edit synopsis
+    // 3. edit synopsis
     csv::edit_field(fin, fout, _title, synopsis, "title", "synopsis");
 
-    // close files
+    // 4. close files
     fin.close();
     fout.close();
 
-    // overwrite original file
+    // 5. overwrite original file
     std::remove(_csv_file.c_str());
     std::rename(temp_file.c_str(), _csv_file.c_str());
 }
