@@ -33,8 +33,8 @@ namespace core::data {
          * \param square_path Path to the square format image.
          */
         Cover(
-            std::filesystem::path normal_path,
-            std::filesystem::path square_path
+            const std::filesystem::path &normal_path,
+            const std::filesystem::path &square_path
         );
 
         /**
@@ -53,13 +53,13 @@ namespace core::data {
          * \brief Set the path of the normal image.
          * \param path New filesystem path to use for the normal image.
          */
-        void set_normal_path(const std::filesystem::path path);
+        void set_normal_path(const std::filesystem::path &path);
 
         /**
          * \brief Set the path of the square image.
          * \param path New filesystem path to use for the square image.
          */
-        void set_square_path(const std::filesystem::path path);
+        void set_square_path(const std::filesystem::path &path);
 
         /**
          * \brief Convert the image information to a string.

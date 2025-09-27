@@ -36,9 +36,9 @@ namespace core::image_format {
      * \return A Cover object referencing the generated images.
      */
     data::Cover create_covers(
-        std::string img_source,
-        std::string output_name,
-        std::filesystem::path output_dir
+        const std::string &img_source,
+        const std::string &output_name,
+        const std::filesystem::path &output_dir
     );
 
     /**

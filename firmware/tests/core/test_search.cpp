@@ -77,12 +77,19 @@ int main(void) {
     );
 
     search::Indexer *index = new search::Indexer("./index_db", "french");
-    index->add(&m1);
-    index->add(&m2);
-    index->add(&m3);
-    index->add(&m4);
-    index->add(&m5);
-    index->add(&m6);
+    auto rm1 = ref(m1);
+    auto rm2 = ref(m2);
+    auto rm3 = ref(m3);
+    auto rm4 = ref(m4);
+    auto rm5 = ref(m5);
+    auto rm6 = ref(m6);
+
+    index->add(rm1);
+    index->add(rm2);
+    index->add(rm3);
+    index->add(rm4);
+    index->add(rm5);
+    index->add(rm6);
 
     assert(index->nb_movies() == 6);
     size_t nb_terms = index->nb_terms();
@@ -90,7 +97,7 @@ int main(void) {
 
     string ancien = m6.title();
     m6.set_category("Fantastique");
-    index->edit(ancien, &m6);
+    index->edit(ancien, rm6);
     assert(index->nb_movies() == 6);
     assert(index->nb_terms() >= nb_terms + 1);
     
@@ -103,7 +110,7 @@ int main(void) {
     assert(index->nb_movies() == 5);
     assert(index->nb_terms() == nb_terms);
 
-    index->add(&m5);
+    index->add(ref(m5));
     assert(index->nb_movies() == 6);
 
     auto res = index->search("Victor Francen");

@@ -24,29 +24,29 @@ size_t search::Indexer::nb_movies() {
     return _db.get_doccount();
 }
 
-void search::Indexer::add(const data::Movie *f) {
+void search::Indexer::add(const data::movie_ref &f) {
     Xapian::Document doc;
-    doc.set_data(f->title());
+    doc.set_data(f.get().title());
     _termgen.set_document(doc);
 
-    doc.set_data(f->title());
+    doc.set_data(f.get().title());
 
-    _termgen.index_text(f->title(),           5); _termgen.increase_termpos();
-    _termgen.index_text(f->category(),        3); _termgen.increase_termpos();
-    _termgen.index_text(to_string(f->year()), 1); _termgen.increase_termpos();
-    _termgen.index_text(f->director(),        2); _termgen.increase_termpos();
-    _termgen.index_text(f->producer(),        2); _termgen.increase_termpos();
-    _termgen.index_text(f->actors(),          4); _termgen.increase_termpos();
-    _termgen.index_text(f->synopsis(),        1);
+    _termgen.index_text(f.get().title(),           5); _termgen.increase_termpos();
+    _termgen.index_text(f.get().category(),        3); _termgen.increase_termpos();
+    _termgen.index_text(to_string(f.get().year()), 1); _termgen.increase_termpos();
+    _termgen.index_text(f.get().director(),        2); _termgen.increase_termpos();
+    _termgen.index_text(f.get().producer(),        2); _termgen.increase_termpos();
+    _termgen.index_text(f.get().actors(),          4); _termgen.increase_termpos();
+    _termgen.index_text(f.get().synopsis(),        1);
 
-    std::string unique_id = "Q" + slug(f->title());
+    std::string unique_id = "Q" + slug(f.get().title());
     doc.add_boolean_term(unique_id);
 
     _db.replace_document(unique_id, doc);
 }
 
-void search::Indexer::edit(const string old_title, data::Movie *f) {
-    remove(old_title); add(f);
+void search::Indexer::edit(const string old_title, data::movie_ref &m) {
+    remove(old_title); add(m);
 }
 
 void search::Indexer::remove(const string &title) {

@@ -29,16 +29,16 @@ void test_basic_catalog() {
     c.save("./temp.csv");
 
     assert(c.size() == 5);
-    assert(c.all_movies().at(1)->title() == "f2");
-    const data::Movie *fi = c.get_movie("f3");
-    assert(fi != nullptr && fi == m3_ptr);
+    assert(c.all_movies().at(1).get().title() == "f2");
+    const optional<data::movie_ref> fi = c.get_movie("f3");
+    assert(fi.has_value() && &fi.value().get() == m3_ptr);
 
     BasicCatalog c1("./temp.csv");
     assert(c1.size() == 5);
     c1.remove("f4");
     assert(c1.size() == 4);
-    assert(c1.all_movies().at(2)->title() == "f3");
-    assert(c1.all_movies().at(3)->title() == "f5");
+    assert(c1.all_movies().at(2).get().title() == "f3");
+    assert(c1.all_movies().at(3).get().title() == "f5");
 
     remove("./temp.csv");
 }
@@ -66,22 +66,22 @@ void test_cached_catalog() {
     CachedCatalog cc("./temp.csv", 2);
     assert(cc.size() == 5);
     
-    assert(cc.get_movie("f4")->synopsis() == "synopsis4");
+    assert(cc.get_movie("f4").value().get().synopsis() == "synopsis4");
     assert(!cc.is_cached("f1") 
         && !cc.is_cached("f2")
         && !cc.is_cached("f3")
         && cc.is_cached("f4")
         && !cc.is_cached("f5"));
 
-    assert(cc.get_movie("f3")->synopsis() == "synopsis3");
+    assert(cc.get_movie("f3").value().get().synopsis() == "synopsis3");
     assert(!cc.is_cached("f1") 
         && !cc.is_cached("f2")
         && cc.is_cached("f3")
         && cc.is_cached("f4")
         && !cc.is_cached("f5"));
 
-    assert(cc.get_movie("f4")->synopsis() == "synopsis4");
-    assert(cc.get_movie("f2")->synopsis() == "synopsis2");
+    assert(cc.get_movie("f4").value().get().synopsis() == "synopsis4");
+    assert(cc.get_movie("f2").value().get().synopsis() == "synopsis2");
     assert(!cc.is_cached("f1")
         && cc.is_cached("f2")
         && !cc.is_cached("f3")
@@ -91,8 +91,8 @@ void test_cached_catalog() {
     cc.remove("f4");
     assert(!cc.is_cached("f4"));
 
-    c.get_movie("f1")->set_synopsis("sysy");
-    assert(c.get_movie("f1")->synopsis() == "sysy");
+    c.get_movie("f1").value().get().set_synopsis("sysy");
+    assert(c.get_movie("f1").value().get().synopsis() == "sysy");
 
     remove("./temp.csv");
 }
@@ -113,18 +113,18 @@ void test_paged_cached_catalog() {
     PagedCachedCatalog pcc("./temp.csv", 2);
     assert(pcc.size() == 52);
 
-    assert(pcc.get_movie("f25")->synopsis() == "synopsis25");
+    assert(pcc.get_movie("f25").value().get().synopsis() == "synopsis25");
     for (size_t i = 0; i < 20; i++) assert(!pcc.is_cached("f"+to_string(i)));
     for (size_t i = 20; i < 30; i++) assert(pcc.is_cached("f"+to_string(i)));
     for (size_t i = 30; i < 52; i++) assert(!pcc.is_cached("f"+to_string(i)));
 
-    assert(pcc.get_movie("f30")->synopsis() == "synopsis30");
+    assert(pcc.get_movie("f30").value().get().synopsis() == "synopsis30");
     for (size_t i = 0; i < 20; i++) assert(!pcc.is_cached("f"+to_string(i)));
     for (size_t i = 20; i < 40; i++) assert(pcc.is_cached("f"+to_string(i)));
     for (size_t i = 40; i < 52; i++) assert(!pcc.is_cached("f"+to_string(i)));
 
-    pcc.get_movie("f20")->synopsis();
-    assert(pcc.get_movie("f50")->synopsis() == "synopsis50");
+    pcc.get_movie("f20").value().get().synopsis();
+    assert(pcc.get_movie("f50").value().get().synopsis() == "synopsis50");
     for (size_t i = 0; i < 20; i++) assert(!pcc.is_cached("f"+to_string(i)));
     for (size_t i = 20; i < 30; i++) assert(pcc.is_cached("f"+to_string(i)));
     for (size_t i = 40; i < 50; i++) assert(!pcc.is_cached("f"+to_string(i)));

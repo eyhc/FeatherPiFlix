@@ -57,9 +57,9 @@ namespace core::search {
         /**
          * \brief Adds a new movie to the database.
          * 
-         * \param f Pointer to the Movie object to index.
+         * \param f Reference to the Movie object to index.
          */
-        void add(const data::Movie *f);
+        void add(const data::movie_ref &m);
 
         /**
          * \brief Edits an existing movie in the database.
@@ -68,9 +68,9 @@ namespace core::search {
          * The existing entry is replaced with the new movie data.
          * 
          * \param old_title Title of the movie to replace.
-         * \param f Pointer to the new Movie object.
+         * \param f Reference to the new Movie object.
          */
-        void edit(const std::string old_title, data::Movie *f);
+        void edit(const std::string old_title, data::movie_ref &m);
 
         /**
          * \brief Removes a movie from the database by its title.

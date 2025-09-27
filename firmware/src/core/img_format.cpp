@@ -7,7 +7,9 @@ using namespace core;
 using namespace std;
 
 data::Cover image_format::create_covers (
-    string img_src, string output_name, filesystem::path output_dir
+    const string &img_src, 
+    const string &output_name,
+    const filesystem::path &output_dir
 ) {
     // try to open source img
     gdImagePtr src = gdImageCreateFromFile(img_src.c_str());

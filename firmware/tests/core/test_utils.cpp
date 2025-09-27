@@ -77,8 +77,15 @@ void test_get_field() {
     assert(res.has_value() && res.value() == "ok");
 
     restart(in);
-    res = csv::get_field(in, "48", "A", "C");
-    assert(!res.has_value());
+
+    try {
+        res = csv::get_field(in, "48", "A", "C");
+        assert(false);
+    }
+    catch(const std::runtime_error& e) {
+        assert(string(e.what()) == "Missing field_colunm_name: C");
+    }
+    catch(const std::exception& e) { assert(false); }
 
     restart(in);
     res = csv::get_field(in, "49", "A", "c");

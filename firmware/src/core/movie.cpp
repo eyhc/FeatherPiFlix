@@ -34,13 +34,6 @@ Movie::Movie(
     _synopsis = make_unique<DirectSynopsisProvider>(synopsis);
 }
 
-Movie::Movie(const Movie &m): 
-    _title(m._title), _year(m._year), _category(m._category), 
-    _producer(m._producer), _director(m._director), _actors(m._actors), 
-    _duration(m._duration), _cover(m._cover), _video_file(m._video_file)
-{
-    _synopsis = make_unique<DirectSynopsisProvider>(m.synopsis());
-}
 
 string Movie::title() const    { return _title; }
 int Movie::year() const        { return _year; }
@@ -78,8 +71,8 @@ void Movie::change_synopsis_provider(function<
     _synopsis = move(chg_fct(move(_synopsis)));
 }
 
-SynopsisProvider *Movie::get_synopsis_provider() const {
-    return _synopsis.get();
+reference_wrapper<SynopsisProvider> Movie::get_synopsis_provider() const {
+    return ref(*_synopsis);
 }
 
 bool Movie::equals(const Movie &m) const {
@@ -164,6 +157,9 @@ void CSVFileSynopsisProvider::set_synopsis(const string &synopsis) {
     fout.close();
 
     // 5. overwrite original file
-    std::remove(_csv_file.c_str());
-    std::rename(temp_file.c_str(), _csv_file.c_str());
+    int r1 = std::remove(_csv_file.c_str());
+    int r2 = std::rename(temp_file.c_str(), _csv_file.c_str());
+
+    if (r1 != 0 || r2 != 0) 
+        throw runtime_error("Cannot replace the CSV file");
 }

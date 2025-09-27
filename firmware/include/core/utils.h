@@ -36,7 +36,8 @@ namespace core {
         using row_callback = std::function<void(std::vector<std::string>&)>;
 
         /**
-         * \brief Read a CSV stream chunk by chunk and call a callback for each row.
+         * \brief Read a CSV stream chunk by chunk and call a callback for 
+         *        each row.
          *
          * This function parses the input stream using libcsv.
          * Each row is converted into a vector of strings and passed 
@@ -68,8 +69,10 @@ namespace core {
          * \param out The output stream to write to.
          * \param fields Vector of strings representing the row's fields.
          */
-        void write_row(std::ostream &out, const std::vector<std::string> &fields);
-
+        void write_row(
+            std::ostream &out,
+            const std::vector<std::string> &fields
+        );
 
         /**
          * \brief Write multiple rows to a CSV output stream.
@@ -84,21 +87,24 @@ namespace core {
          * \brief Retrieve the value of a specific field in a CSV row 
          *        identified by an ID.
          *
-         * Reads the CSV from the input stream `in` line by line, searches for the 
-         * row where the column `id_column_name` matches the given `id`, and returns
-         * the value of the column `field_column_name`.
+         * Reads the CSV from the input stream `in` line by line, searches for 
+         * the row where the column `id_column_name` matches the given `id`, and
+         * returns the value of the column `field_column_name`.
          *
          * \param in Input CSV stream.
          * \param id The row identifier to search for.
          * \param id_column_name Name of the column used to match the ID.
-         * \param field_column_name Name of the column whose value should be retrieved.
+         * \param field_column_name Name of the column whose value should be 
+         *        retrieved.
          *
-         * \return An optional containing the value if the row and column are found,
-         *         or std::nullopt if no matching row is found.
+         * \return An optional containing the value if the row and column are 
+         *         found, or std::nullopt if no matching row is found.
          *
+         * \throw std::runtime_error If the `id_column_name` or 
+         *        `field_column_name` columns do not exist on the CSV stream
          *
-         * \note This function reads the CSV sequentially and stops as soon as the 
-         *       matching row is found.
+         * \note This function reads the CSV sequentially and stops as soon as 
+         *       the matching row is found.
          */
         std::optional<std::string> get_field(
             std::istream &in,
@@ -108,11 +114,11 @@ namespace core {
         );
 
         /**
-         * \brief Update a specific value in a CSV stream identified by a row ID.
+         * \brief Update a specific value in a CSV stream.
          *
-         * Reads the input CSV stream, searches for the row where `id_column_name`
-         * matches `id`, updates `value_column_name` to `value`, and writes
-         * the updated CSV to `out`.
+         * Reads the input CSV stream, searches for the row where 
+         * `id_column_name` matches `id`, updates `value_column_name` to 
+         * `value`, and writes the updated CSV to `out`.
          *
          * \param in Input CSV stream.
          * \param out Output stream to write the updated CSV.
@@ -122,6 +128,9 @@ namespace core {
          * \param value_column_name Name of the column to update.
          *
          * \note edition is done only with the first match
+         * 
+         * \throw std::runtime_error If the `id_column_name` or 
+         *        `field_column_name` columns do not exist on the CSV stream
          */
         void edit_field(
             std::istream &in,

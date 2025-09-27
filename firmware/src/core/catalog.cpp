@@ -36,8 +36,10 @@ void CachedSynopsisProvider::set_synopsis(const string &synopsis) {
     return _base_provider.get()->set_synopsis(synopsis);
 }
 
-data::SynopsisProvider *CachedSynopsisProvider::get_base_provider() const {
-    return _base_provider.get();
+reference_wrapper<data::SynopsisProvider>
+    CachedSynopsisProvider::get_base_provider() const
+{
+    return ref(*_base_provider);
 }
 
 
@@ -49,6 +51,7 @@ data::SynopsisProvider *CachedSynopsisProvider::get_base_provider() const {
 // For each row, call the provided function f(movie).
 static void parse_csv(string filename, function<void(data::Movie&)> f) {
     ifstream in(filename);
+    if (!in.is_open()) throw runtime_error("Cannot open file: " + filename);
 
     // Column indexes (initialized to -1 before header parsing)
     bool is_first = true;
@@ -113,26 +116,28 @@ static void parse_csv(string filename, function<void(data::Movie&)> f) {
 
         // For each data row, create a FullMovie and call callback
         else  {
-            data::Movie m = data::Movie(
-                row[title_index],
-                atoi(row[year_index].c_str()),
-                row[category_index],
-                row[producer_index],
-                row[director_index],
-                row[actors_index],
-                atoi(row[duration_index].c_str()),
-                row[synopsis_index],
-                data::Cover(row[cover_normal_index], row[cover_square_index]),
-                row[video_file_index]
-            );
-            f(m);
+            try {
+                data::Movie m = data::Movie(
+                    row[title_index],
+                    atoi(row[year_index].c_str()),
+                    row[category_index],
+                    row[producer_index],
+                    row[director_index],
+                    row[actors_index],
+                    atoi(row[duration_index].c_str()),
+                    row[synopsis_index],
+                    data::Cover(row[cover_normal_index], row[cover_square_index]),
+                    row[video_file_index]
+                );
+                f(m);
+            }
+            catch (const std::out_of_range &e) {
+                throw runtime_error("Missing column(s)");
+            }
         }
     };
 
-    try {
-        csv::read(in, on_row);
-    }
-    catch(const std::exception& e) { /* Ignore exception */ }
+    csv::read(in, on_row);
 
     in.close();
 }
@@ -145,8 +150,19 @@ static void parse_csv(string filename, function<void(data::Movie&)> f) {
 BasicCatalog::BasicCatalog() = default;
 
 BasicCatalog::BasicCatalog(const string& filename) {
-    parse_csv(filename, [&](data::Movie &m)->void {
-            add(make_unique<data::Movie>(m));
+    parse_csv(filename, [&](data::Movie &m) -> void {
+            add(make_unique<data::Movie>(
+                m.title(),
+                m.year(),
+                m.category(),
+                m.producer(),
+                m.director(),
+                m.actors(),
+                m.duration(),
+                m.synopsis(),
+                m.cover(),
+                m.video_file()
+            ));
         }
     );
 }
@@ -154,7 +170,7 @@ BasicCatalog::BasicCatalog(const string& filename) {
 void BasicCatalog::add(unique_ptr<data::Movie> m) {
     // checks first if already exist in this catalog
     if (!get_movie(m.get()->title()))
-        _data.push_back(std::move(m));
+        _data.push_back(move(m));
 }
 
 void BasicCatalog::remove(const string &title) {
@@ -167,7 +183,7 @@ void BasicCatalog::remove(const string &title) {
 
 size_t BasicCatalog::size() const { return _data.size(); }
 
-std::optional<size_t> BasicCatalog::get_index(const string &title) {
+std::optional<size_t> BasicCatalog::get_index(const string &title) const {
     for (size_t i = 0; i < _data.size(); i++) {
         if (_data[i].get()->title() == title) {
             return i;
@@ -176,26 +192,31 @@ std::optional<size_t> BasicCatalog::get_index(const string &title) {
     return nullopt;
 }
 
-data::Movie *BasicCatalog::get_movie(const size_t index) {
-    return _data.at(index).get();
+optional<data::movie_ref> BasicCatalog::get_movie(
+    const size_t index
+) const {
+    return ref(*(_data.at(index)));
 }
 
-data::Movie *BasicCatalog::get_movie(const std::string& title) {
+optional<data::movie_ref> BasicCatalog::get_movie(
+    const std::string &title
+) const {
     optional<size_t> index = get_index(title);
-    if (!index.has_value()) return nullptr;
+    if (!index.has_value()) return nullopt;
     else return get_movie(index.value());
 }
 
-vector<data::Movie *> BasicCatalog::all_movies() {
-    vector<data::Movie*> v;
+vector<data::movie_ref> BasicCatalog::all_movies() {
+    vector<data::movie_ref> v;
     for (const auto &movie: _data) {
-        v.push_back(movie.get());
+        v.push_back(ref(*movie));
     }
     return v;
 }
 
 void BasicCatalog::save(const string &filename) const {
     ofstream out(filename);
+    if (!out.is_open()) throw runtime_error("Cannot open file: " + filename);
 
     // write headers
     csv::write_row(out, {
@@ -248,9 +269,7 @@ CachedCatalog::CachedCatalog(const string &filename, size_t cache_size):
     _cache.reserve(cache_size);
 
     parse_csv(filename, [&](data::Movie &m)->void {
-        unique_ptr<data::SynopsisProvider> s =
-            make_unique<data::CSVFileSynopsisProvider>(m.title(), filename);
-        add(make_unique<data::Movie>(
+        add (make_unique<data::Movie>(
             m.title(),
             m.year(),
             m.category(),
@@ -258,7 +277,7 @@ CachedCatalog::CachedCatalog(const string &filename, size_t cache_size):
             m.director(),
             m.actors(),
             m.duration(),
-            move(s),
+            make_unique<data::CSVFileSynopsisProvider>(m.title(), filename),
             m.cover(),
             m.video_file()
         ));
@@ -267,15 +286,15 @@ CachedCatalog::CachedCatalog(const string &filename, size_t cache_size):
 
 void CachedCatalog::add(unique_ptr<data::Movie> movie) {
     auto chgt_fct = [&](unique_ptr<data::SynopsisProvider> base) {
-        auto s = make_unique<CachedSynopsisProvider>(
+        return make_unique<CachedSynopsisProvider>(
             movie.get()->title(),
             move(base),
             [&](string t) -> string {
                 auto res = get_synopsis_using_cache(t);
                 return (res.has_value()) ? res.value() : "";
             });
-        return s;
     };
+
     movie.get()->change_synopsis_provider(chgt_fct);
     BasicCatalog::add(move(movie));
 }
@@ -297,28 +316,28 @@ optional<string> CachedCatalog::get_synopsis_using_cache(const string &title) {
     }
 
     // 2. otherwise load from movie
-    data::Movie *f = get_movie(title);
-    if (!f) return nullopt;
+    optional<data::movie_ref> f = get_movie(title);
+    if (!f.has_value()) return nullopt;
 
-    auto *csp = static_cast<CachedSynopsisProvider*>(f->get_synopsis_provider());
-    optional<string> s = csp->get_base_provider()->get_synopsis();
-    if (s.has_value()) {
-        // 3. evict if cache full
-        if (_cache.size() >= _cache_size) {
-            auto old = _order.front();
-            _order.erase(_order.begin());
-            _cache.erase(old);
-        }
-
-        // 4. insert into cache
-        _cache[title] = s.value();
-        _order.push_back(title);
+    auto &provider_ref = f->get().get_synopsis_provider().get();
+    auto &csp = static_cast<CachedSynopsisProvider&>(provider_ref);
+    string s = csp.get_base_provider().get().get_synopsis();
+        
+    // 3. evict if cache full
+    if (_cache.size() >= _cache_size) {
+        auto old = _order.front();
+        _order.erase(_order.begin());
+        _cache.erase(old);
     }
+
+    // 4. insert into cache
+    _cache[title] = s;
+    _order.push_back(title);
 
     return s;
 }
 
-bool CachedCatalog::is_cached(const string &title) {
+bool CachedCatalog::is_cached(const string &title) const {
     auto it = _cache.find(title);
     return it != _cache.end();
 }
@@ -329,15 +348,10 @@ bool CachedCatalog::is_cached(const string &title) {
  -------------------------------------------*/
 
 // PagedCachedCatalog caches whole pages of synopsis (page = 10 movies).
-PagedCachedCatalog::PagedCachedCatalog(size_t cache_size): 
-    _cache_size(cache_size) {}
-
 PagedCachedCatalog::PagedCachedCatalog(
     const string &filename, size_t cache_size
-): _cache_size(cache_size) {
+): _filename(filename), _cache_size(cache_size) {
     parse_csv(filename, [&](data::Movie &m)->void {
-        unique_ptr<data::SynopsisProvider> s =
-            make_unique<data::CSVFileSynopsisProvider>(m.title(), filename);
         add(make_unique<data::Movie>(
             m.title(),
             m.year(),
@@ -346,7 +360,7 @@ PagedCachedCatalog::PagedCachedCatalog(
             m.director(),
             m.actors(),
             m.duration(),
-            move(s),
+            make_unique<data::CSVFileSynopsisProvider>(m.title(), filename),
             m.cover(),
             m.video_file()
         ));
@@ -355,22 +369,23 @@ PagedCachedCatalog::PagedCachedCatalog(
 
 void PagedCachedCatalog::add(unique_ptr<data::Movie> movie) {
     auto chgt_fct = [&](unique_ptr<data::SynopsisProvider> base) {
-        auto s = make_unique<CachedSynopsisProvider>(
+        return make_unique<CachedSynopsisProvider>(
             movie.get()->title(),
             move(base),
             [&](string t) -> string {
                 auto res = get_synopsis_using_cache(t);
                 return (res.has_value()) ? res.value() : "";
             });
-        return s;
     };
     movie.get()->change_synopsis_provider(chgt_fct);
     BasicCatalog::add(move(movie));
 }
 
-bool PagedCachedCatalog::is_cached(const string &title) {
+bool PagedCachedCatalog::is_cached(const string &title) const {
     optional<size_t> index = get_index(title);
-    return index.has_value() && get_page(index.value() / PAGE_SIZE).has_value();
+    if (!index.has_value()) return false;
+    auto itpage = _cache.find(index.value() / PAGE_SIZE);
+    return itpage != _cache.end();
 }
 
 optional<string> PagedCachedCatalog::get_synopsis_using_cache(
@@ -400,11 +415,12 @@ optional<string> PagedCachedCatalog::get_synopsis_using_cache(
     }
 
     // 5. fallback: ask movie directly
-    auto *m = get_movie(title);
-    if (!m) return nullopt;
+    auto m = get_movie(title);
+    if (!m.has_value()) return nullopt;
 
-    auto *csp = static_cast<CachedSynopsisProvider *>(m->get_synopsis_provider());
-    return csp->get_base_provider()->get_synopsis();
+    auto &prov = m.value().get().get_synopsis_provider().get();
+    auto &csp = static_cast<CachedSynopsisProvider&>(prov);
+    return csp.get_base_provider().get().get_synopsis();
 }
 
 optional<unordered_map<string, string>> PagedCachedCatalog::get_page(size_t index) {
@@ -432,11 +448,12 @@ void PagedCachedCatalog::load_page(size_t index) {
     size_t last_index = min(PAGE_SIZE * (index + 1), size());
     unordered_map<string, optional<string>> temp_page;
     for (size_t i = PAGE_SIZE * index; i < last_index; i++) {
-        temp_page[get_movie(i)->title()] = nullopt;
+        auto &m = get_movie(i).value().get();
+        temp_page[m.title()] = nullopt;
     }
     
     // 3. parse CSV to fill synopses
-    parse_csv(filename, [&temp_page](data::Movie &m) -> void {
+    parse_csv(_filename, [&temp_page](data::Movie &m) -> void {
         if (temp_page.count(m.title())) {
             temp_page[m.title()] = m.synopsis();
         }
@@ -444,12 +461,12 @@ void PagedCachedCatalog::load_page(size_t index) {
 
     // 4. fallback: ask Movie objects directly if missing
     for (size_t i = PAGE_SIZE * index; i < last_index; i++) {
-        auto *m = get_movie(i);
-        if (temp_page[m->title()] == nullopt) {
-            auto *csp = static_cast<CachedSynopsisProvider *>(
-                m->get_synopsis_provider()
+        auto &m = get_movie(i).value().get();
+        if (temp_page[m.title()] == nullopt) {
+            auto &csp = static_cast<CachedSynopsisProvider&>(
+                m.get_synopsis_provider().get()
             );
-            temp_page[m->title()] = csp->get_base_provider()->get_synopsis();
+            temp_page[m.title()] = csp.get_base_provider().get().get_synopsis();
         }
     }
 

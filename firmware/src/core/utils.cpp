@@ -24,7 +24,7 @@ void core::csv::read(std::istream &in, row_callback on_row) {
     };
     CsvGuard guard{&p}; // use a guard for default freeing parser
 
-    // create context for context
+    // create context for parsing
     struct ParseCtx {
         vector<string> current_row;
         csv::row_callback *cb;
@@ -114,10 +114,8 @@ optional<string> csv::get_field(
         if (is_first) {
             auto itt = find(row.begin(), row.end(), id_col_name);
             auto its = find(row.begin(), row.end(), value_col_name);
-            if (itt != row.end() && its != row.end()) {
-                id_col_index = distance(row.begin(), itt);
-                value_col_index = distance(row.begin(), its);
-            }
+            if (itt != row.end()) id_col_index = distance(row.begin(), itt);
+            if (its != row.end()) value_col_index = distance(row.begin(), its);
 
             if (id_col_index < 0) 
                 throw runtime_error("Missing id_column_name: "+id_col_name);
@@ -134,12 +132,8 @@ optional<string> csv::get_field(
         }
     };
 
-    try {
-        csv::read(in, rc);
-        return result;
-    } catch(const exception& e) {
-        return nullopt;
-    }
+    csv::read(in, rc);
+    return result;
 }
 
 void csv::edit_field(
@@ -165,7 +159,7 @@ void csv::edit_field(
             if (id_col_index < 0) 
                 throw runtime_error("Missing id_column_name: "+id_col_name);
             if (value_col_index < 0) 
-                throw runtime_error("Missing field_colunm_name: "+value_col_name);
+                throw runtime_error("Missing field_column_name: "+value_col_name);
 
             is_first = false;
         }

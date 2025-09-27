@@ -30,6 +30,7 @@ namespace core::data {
         /**
          * \brief Get the synopsis text.
          * \return Synopsis string.
+         * \throws std::runtime_error If an error occurs during reading.
          */
         virtual std::string get_synopsis() const = 0;
 
@@ -37,6 +38,7 @@ namespace core::data {
         /**
          * \brief Set or update the synopsis text.
          * \param synopsis New synopsis text.
+         * \throws std::runtime_error If an error occurs during editing.
          */
         virtual void set_synopsis(const std::string &synopsis) = 0;
 
@@ -65,7 +67,8 @@ namespace core::data {
          * \brief Update the stored synopsis string.
          * \param synopsis New synopsis text.
          */
-        virtual void set_synopsis(const std::string &synopsis);
+        virtual void set_synopsis(const std::string &synopsis) override;
+    
     private:
         std::string _synopsis; ///< Stored synopsis text
     };
@@ -90,12 +93,21 @@ namespace core::data {
         /**
          * \brief Retrieve the synopsis from the CSV file.
          * \return Synopsis string from the CSV file.
+         * 
+         * \throws std::runtime_error If the CSV file cannot be opened 
+         *         for reading.
          */
         virtual std::string get_synopsis() const override;
 
         /**
          * \brief Update the synopsis in the CSV file.
          * \param synopsis New synopsis text.
+         * \throws std::runtime_error If the CSV file cannot be opened 
+         *         for reading 
+         * \throws std::runtime_error If the temporary file cannot be opened 
+         *         for writing.
+         * \throws std::runtime_error If an error occurs while rewriting 
+         *         the CSV file.
          * \note Overwrite all the CSV file
          */
         virtual void set_synopsis(const std::string &synopsis) override;
@@ -172,13 +184,7 @@ namespace core::data {
             const std::filesystem::path &video_file
         );
 
-        /**
-         * \brief Copy constructor.
-         * \param m Movie to copy.
-         * \note Replace the m \c SynopsisProvider by a \c DirectSynopsisProvider
-         */
-        Movie(const Movie &m);
-
+        
         // --- Accessors ---
 
         /**
@@ -226,6 +232,8 @@ namespace core::data {
         /**
          * \brief Get the synopsis of the movie.
          * \return Short description of the movie.
+         * \throws std::runtime_error If an error occurs during reading.
+         * \note Just calls the synopsis provider.
          */
         std::string synopsis() const;
 
@@ -292,6 +300,8 @@ namespace core::data {
         /**
          * \brief Set the synopsis of the movie.
          * \param synopsis New short description.
+         * \throws std::runtime_error If an error occurs during editing.
+         * \note Just calls the synopsis provider.
          */
         void set_synopsis(const std::string &synopsis);
 
@@ -335,9 +345,10 @@ namespace core::data {
          * Returns the underlying provider used to retrieve and update the
          * synopsis for this movie.
          * 
-         * \return Pointer to the synopsis provider (non-owning).
+         * \return Reference to the synopsis provider.
          */
-        data::SynopsisProvider *get_synopsis_provider() const;
+        std::reference_wrapper<data::SynopsisProvider> 
+            get_synopsis_provider() const;
 
 
         // --- Display & Comparison ---
@@ -374,6 +385,9 @@ namespace core::data {
         Cover _cover;                      ///< Associated cover
         std::filesystem::path _video_file; ///< Video file path
     };
+
+    /// Alias for a reference to a Movie object.
+    typedef std::reference_wrapper<data::Movie> movie_ref;
 
 } // namespace core::data
 
