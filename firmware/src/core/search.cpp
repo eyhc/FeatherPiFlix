@@ -54,6 +54,19 @@ void search::Indexer::remove(const string &title) {
     _db.delete_document(unique_id);
 }
 
+void search::Indexer::flush() {
+    _db.commit();
+}
+
+void search::Indexer::clear() {
+    Xapian::docid maxid = _db.get_lastdocid();
+    for (Xapian::docid did = 1; did <= maxid; ++did)
+        try {
+            _db.delete_document(did);
+        }
+        catch(const Xapian::DocNotFoundError& e)  { /* Ignore exception */ }
+}
+
 vector<pair<string, double>> search::Indexer::search(
     const string &query_str, size_t max_results
 ) {

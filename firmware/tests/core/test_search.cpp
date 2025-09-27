@@ -122,6 +122,10 @@ int main(void) {
     assert(res[0].first == "La Fin du jour");
     assert(res[1].first == "La Trilogie Marseillaise : Fanny");
 
+    index->clear();
+    assert(index->nb_movies() == 0);
+    assert(index->nb_terms() == 0);
+
     delete index;
     filesystem::remove_all("./index_db");
 

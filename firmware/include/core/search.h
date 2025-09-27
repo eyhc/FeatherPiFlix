@@ -80,6 +80,16 @@ namespace core::search {
         void remove(const std::string &title);
 
         /**
+         * \brief Save modifications made to the database.
+         */
+        void flush();
+
+        /**
+         * \brief Erase all documents in the database
+         */
+        void clear();
+
+        /**
          * \brief Search the indexed movies using a query string and return 
          *        relevance scores.
          * 

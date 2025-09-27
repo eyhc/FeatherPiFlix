@@ -64,16 +64,15 @@ foreach(T IN LISTS CORE_TESTS)
     string(REPLACE "/" "_" T_NORM ${T})
     add_executable(${T_NORM} tests/${T}.cpp)
     target_link_libraries(${T_NORM} PRIVATE core)
-    string(REGEX REPLACE ".*/" "" T_EXEC ${T})
     string(REGEX REPLACE "/.*" "" LABEL ${T})
-    add_test(NAME ${T} COMMAND ./${T_EXEC})
+    add_test(NAME ${T} COMMAND ./${T_NORM})
     set_tests_properties(${T} PROPERTIES LABELS ${LABEL})
 endforeach()
 
 find_program(VALGRIND_EXECUTABLE valgrind)
 foreach(T IN LISTS CORE_TESTS)
     if(VALGRIND_EXECUTABLE AND NOT T STREQUAL "core/test_search")
-        string(REGEX REPLACE ".*/" "" T_EXEC ${T})
+        string(REGEX REPLACE "/" "_" T_EXEC ${T})
         add_test(NAME valgrind_${T_EXEC}
                  COMMAND ${VALGRIND_EXECUTABLE} --leak-check=full
                  --error-exitcode=2 ./${T_EXEC})
