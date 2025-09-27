@@ -66,22 +66,22 @@ void test_cached_catalog() {
     CachedCatalog cc("./temp.csv", 2);
     assert(cc.size() == 5);
     
-    assert(cc.get_synopsis_using_cache("f4") == "synopsis4");
+    assert(cc.get_movie("f4")->synopsis() == "synopsis4");
     assert(!cc.is_cached("f1") 
         && !cc.is_cached("f2")
         && !cc.is_cached("f3")
         && cc.is_cached("f4")
         && !cc.is_cached("f5"));
 
-    assert(cc.get_synopsis_using_cache("f3") == "synopsis3");
+    assert(cc.get_movie("f3")->synopsis() == "synopsis3");
     assert(!cc.is_cached("f1") 
         && !cc.is_cached("f2")
         && cc.is_cached("f3")
         && cc.is_cached("f4")
         && !cc.is_cached("f5"));
 
-    assert(cc.get_synopsis_using_cache("f4") == "synopsis4");
-    assert(cc.get_synopsis_using_cache("f2") == "synopsis2");
+    assert(cc.get_movie("f4")->synopsis() == "synopsis4");
+    assert(cc.get_movie("f2")->synopsis() == "synopsis2");
     assert(!cc.is_cached("f1")
         && cc.is_cached("f2")
         && !cc.is_cached("f3")
@@ -90,6 +90,9 @@ void test_cached_catalog() {
 
     cc.remove("f4");
     assert(!cc.is_cached("f4"));
+
+    c.get_movie("f1")->set_synopsis("sysy");
+    assert(c.get_movie("f1")->synopsis() == "sysy");
 
     remove("./temp.csv");
 }
@@ -100,7 +103,7 @@ void test_paged_cached_catalog() {
         string title = "f" + to_string(i);
         string synopsis = "synopsis" + to_string(i);
         unique_ptr<data::Movie> m = make_unique<data::Movie>(
-            title, 0, "", "",  "", "", i*2, synopsis, data::Cover(), "");
+            title, 0, "", "",  "", "", 4*(i+5), synopsis, data::Cover(), "");
 
         c.add(move(m));
     }
@@ -110,18 +113,18 @@ void test_paged_cached_catalog() {
     PagedCachedCatalog pcc("./temp.csv", 2);
     assert(pcc.size() == 52);
 
-    assert(pcc.get_synopsis_using_cache("f25") == "synopsis25");
+    assert(pcc.get_movie("f25")->synopsis() == "synopsis25");
     for (size_t i = 0; i < 20; i++) assert(!pcc.is_cached("f"+to_string(i)));
     for (size_t i = 20; i < 30; i++) assert(pcc.is_cached("f"+to_string(i)));
     for (size_t i = 30; i < 52; i++) assert(!pcc.is_cached("f"+to_string(i)));
 
-    assert(pcc.get_synopsis_using_cache("f30") == "synopsis30");
+    assert(pcc.get_movie("f30")->synopsis() == "synopsis30");
     for (size_t i = 0; i < 20; i++) assert(!pcc.is_cached("f"+to_string(i)));
     for (size_t i = 20; i < 40; i++) assert(pcc.is_cached("f"+to_string(i)));
     for (size_t i = 40; i < 52; i++) assert(!pcc.is_cached("f"+to_string(i)));
 
-    pcc.get_synopsis_using_cache("f20");
-    assert(pcc.get_synopsis_using_cache("f50") == "synopsis50");
+    pcc.get_movie("f20")->synopsis();
+    assert(pcc.get_movie("f50")->synopsis() == "synopsis50");
     for (size_t i = 0; i < 20; i++) assert(!pcc.is_cached("f"+to_string(i)));
     for (size_t i = 20; i < 30; i++) assert(pcc.is_cached("f"+to_string(i)));
     for (size_t i = 40; i < 50; i++) assert(!pcc.is_cached("f"+to_string(i)));

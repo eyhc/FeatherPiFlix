@@ -4,6 +4,7 @@
 #include <string>
 #include <filesystem>
 #include <optional>
+#include <functional>
 
 #include "cover.h"
 
@@ -312,10 +313,31 @@ namespace core::data {
         // Synopsis Provider
 
         /**
-         * \brief Replace the current synopsis provider.
-         * \param p New synopsis provider.
+         * \brief Change the synopsis provider using a transformation function.
+         *
+         * Transfers ownership of the current synopsis provider to \p chg_fct,
+         * then stores the provider returned by the function.
+         *
+         * \param chg_fct Function taking the current synopsis provider
+         *        (as a unique_ptr) and returning a new provider (as a unique_ptr).
+         *
+         * \note The current provider is moved into \p chg_fct. The returned provider
+         * replaces it. So, the given \c chg_fct function MUST never return nullptr.
          */
-        void change_synopsis_provider(std::unique_ptr<SynopsisProvider> p);
+        void change_synopsis_provider(std::function<
+            std::unique_ptr<data::SynopsisProvider>(
+                std::unique_ptr<data::SynopsisProvider>
+            )> chg_fct);
+
+        /**
+         * \brief Get the current synopsis provider.
+         * 
+         * Returns the underlying provider used to retrieve and update the
+         * synopsis for this movie.
+         * 
+         * \return Pointer to the synopsis provider (non-owning).
+         */
+        data::SynopsisProvider *get_synopsis_provider() const;
 
 
         // --- Display & Comparison ---

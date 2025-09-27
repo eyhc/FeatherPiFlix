@@ -177,7 +177,11 @@ void test_change_provider() {
     assert(m.synopsis() == "synopsis1");
 
     s = make_unique<data::DirectSynopsisProvider>("synopsis2");
-    m.change_synopsis_provider(move(s));
+    auto f = [&s](unique_ptr<data::SynopsisProvider>) -> 
+    unique_ptr<data::SynopsisProvider> {
+        return move(s);
+    };
+    m.change_synopsis_provider(f);
     assert(m.synopsis() == "synopsis2");
 }
 

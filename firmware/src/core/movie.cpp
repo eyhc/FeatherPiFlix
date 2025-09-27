@@ -72,8 +72,14 @@ void Movie::set_synopsis(const string &synopsis) {
 }
 void Movie::set_video_file(const filesystem::path &path) { _video_file = path; }
 
-void Movie::change_synopsis_provider(unique_ptr<SynopsisProvider> p) {
-    _synopsis = move(p);
+void Movie::change_synopsis_provider(function<
+    unique_ptr<data::SynopsisProvider>(unique_ptr<data::SynopsisProvider>)
+> chg_fct) {
+    _synopsis = move(chg_fct(move(_synopsis)));
+}
+
+SynopsisProvider *Movie::get_synopsis_provider() const {
+    return _synopsis.get();
 }
 
 bool Movie::equals(const Movie &m) const {

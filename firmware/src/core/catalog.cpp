@@ -11,6 +11,36 @@ using namespace core;
 
 #define PAGE_SIZE 10
 
+
+/*------------------------------------------
+           CACHED SYNOPSIS PROVIDER
+  ------------------------------------------*/
+
+CachedSynopsisProvider::CachedSynopsisProvider(
+    const string &title,
+    unique_ptr<data::SynopsisProvider> base_provider,
+    function<optional<string>(const string&)> get_synopsis_using_cache
+) {
+    _title = title;
+    _get_synopsis_using_cache = get_synopsis_using_cache;
+    _base_provider = move(base_provider);
+}
+
+string CachedSynopsisProvider::get_synopsis() const {
+    const auto res = _get_synopsis_using_cache(_title);
+    return 
+        (res.has_value()) ? res.value() : _base_provider.get()->get_synopsis();
+}
+
+void CachedSynopsisProvider::set_synopsis(const string &synopsis) {
+    return _base_provider.get()->set_synopsis(synopsis);
+}
+
+data::SynopsisProvider *CachedSynopsisProvider::get_base_provider() const {
+    return _base_provider.get();
+}
+
+
 /*------------------------------------------
             CONSTRUCTORS HELPER
  -------------------------------------------*/
@@ -235,6 +265,21 @@ CachedCatalog::CachedCatalog(const string &filename, size_t cache_size):
     });
 }
 
+void CachedCatalog::add(unique_ptr<data::Movie> movie) {
+    auto chgt_fct = [&](unique_ptr<data::SynopsisProvider> base) {
+        auto s = make_unique<CachedSynopsisProvider>(
+            movie.get()->title(),
+            move(base),
+            [&](string t) -> string {
+                auto res = get_synopsis_using_cache(t);
+                return (res.has_value()) ? res.value() : "";
+            });
+        return s;
+    };
+    movie.get()->change_synopsis_provider(chgt_fct);
+    BasicCatalog::add(move(movie));
+}
+
 void CachedCatalog::remove(const string &title) {
     BasicCatalog::remove(title);
     _cache.erase(title);
@@ -254,8 +299,9 @@ optional<string> CachedCatalog::get_synopsis_using_cache(const string &title) {
     // 2. otherwise load from movie
     data::Movie *f = get_movie(title);
     if (!f) return nullopt;
-    
-    optional<string> s = f->synopsis();
+
+    auto *csp = static_cast<CachedSynopsisProvider*>(f->get_synopsis_provider());
+    optional<string> s = csp->get_base_provider()->get_synopsis();
     if (s.has_value()) {
         // 3. evict if cache full
         if (_cache.size() >= _cache_size) {
@@ -307,6 +353,21 @@ PagedCachedCatalog::PagedCachedCatalog(
     });
 }
 
+void PagedCachedCatalog::add(unique_ptr<data::Movie> movie) {
+    auto chgt_fct = [&](unique_ptr<data::SynopsisProvider> base) {
+        auto s = make_unique<CachedSynopsisProvider>(
+            movie.get()->title(),
+            move(base),
+            [&](string t) -> string {
+                auto res = get_synopsis_using_cache(t);
+                return (res.has_value()) ? res.value() : "";
+            });
+        return s;
+    };
+    movie.get()->change_synopsis_provider(chgt_fct);
+    BasicCatalog::add(move(movie));
+}
+
 bool PagedCachedCatalog::is_cached(const string &title) {
     optional<size_t> index = get_index(title);
     return index.has_value() && get_page(index.value() / PAGE_SIZE).has_value();
@@ -339,9 +400,11 @@ optional<string> PagedCachedCatalog::get_synopsis_using_cache(
     }
 
     // 5. fallback: ask movie directly
-    auto m = get_movie(title);
-    if (m) return m->synopsis();
-    else return nullopt; 
+    auto *m = get_movie(title);
+    if (!m) return nullopt;
+
+    auto *csp = static_cast<CachedSynopsisProvider *>(m->get_synopsis_provider());
+    return csp->get_base_provider()->get_synopsis();
 }
 
 optional<unordered_map<string, string>> PagedCachedCatalog::get_page(size_t index) {
@@ -382,8 +445,12 @@ void PagedCachedCatalog::load_page(size_t index) {
     // 4. fallback: ask Movie objects directly if missing
     for (size_t i = PAGE_SIZE * index; i < last_index; i++) {
         auto *m = get_movie(i);
-        if (temp_page[m->title()] == nullopt)
-            temp_page[m->title()] = m->synopsis();
+        if (temp_page[m->title()] == nullopt) {
+            auto *csp = static_cast<CachedSynopsisProvider *>(
+                m->get_synopsis_provider()
+            );
+            temp_page[m->title()] = csp->get_base_provider()->get_synopsis();
+        }
     }
 
     // 5. evict oldest page if cache is full

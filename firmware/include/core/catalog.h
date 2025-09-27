@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <optional>
+#include <functional>
 
 #include "core/movie.h"
 
@@ -17,8 +18,61 @@
  * - CachedCatalog: adds an LRU cache for synopses (not paged).
  * - PagedCachedCatalog: adds a paged LRU cache for synopses (10 movies per page).
  */
-
 namespace core {
+
+    /**
+     * \brief A synopsis provider that uses a cache before delegating to a 
+     *        base provider.
+     *
+     * When retrieving the synopsis, this class first attempts to use the cache
+     * via the callback function. If not found, the base provider can be used.
+     */
+    class CachedSynopsisProvider: public data::SynopsisProvider {
+    public:
+        /**
+         * \brief Construct a cached synopsis provider.
+         * 
+         * \param title Movie title.
+         * \param base_provider Base provider to delegate storage/modifications.
+         * \param get_synopsis_using_cache Callback function used to retrieve a
+         *        synopsis from cache given a title.
+         */
+        CachedSynopsisProvider(
+            const std::string &title,
+            std::unique_ptr<data::SynopsisProvider> base_provider,
+            std::function<std::optional<std::string>(const std::string&)> 
+                get_synopsis_using_cache
+        );
+
+        /**
+         * \brief Get the synopsis of the movie.
+         * \return The cached synopsis if available, otherwise empty string.
+         */
+        std::string get_synopsis() const override;
+
+        /**
+         * \brief Update the synopsis of the movie.
+         * \param synopsis New synopsis string.
+         */
+        void set_synopsis(const std::string &synopsis) override;
+
+        /**
+         * \brief Get the underlying base provider (non-owning).
+         * \return Pointer to the base synopsis provider.
+         */
+        data::SynopsisProvider *get_base_provider() const;
+
+    private:
+        std::string _title; ///< Movie title (used as cache key).
+        /// Underlying provider for synopsis storage/retrieval.
+        std::unique_ptr<data::SynopsisProvider> _base_provider;
+        /// Function to retrieve synopsis through cache.
+        std::function<std::optional<std::string>(const std::string&)> 
+            _get_synopsis_using_cache;
+    };
+
+
+    // --------------------------------------------------------------------
 
     /**
      * \brief Basic catalog storing a collection of movies.
@@ -108,6 +162,8 @@ namespace core {
         std::vector<std::unique_ptr<data::Movie>> _data;
     };
 
+
+    // --------------------------------------------------------------------
     
     /**
      * \brief Catalog with an  LRU cache for synopses (not paged).
@@ -133,19 +189,16 @@ namespace core {
         CachedCatalog(const std::string &filename, size_t cache_size);
 
         /**
+         * \brief Add a movie to the catalog.
+         * \param m Movie to add.
+         */
+        void add(std::unique_ptr<data::Movie> m) override;
+
+        /**
          * \brief Remove a movie and its cached synopsis.
          * \param title Title of the movie.
          */
         void remove(const std::string &title) override;
-
-        /**
-         * \brief Get a movie synopsis using cache.
-         * 
-         * \param title Title of the movie.
-         * \return Synopsis if found, empty optional otherwise.
-         */
-        std::optional<std::string> get_synopsis_using_cache(
-            const std::string& title);
         
         /**
          * \brief Check if a movie synopsis is cached.
@@ -154,6 +207,17 @@ namespace core {
          * \return True if cached, false otherwise.
          */
         bool is_cached(const std::string& title);
+
+    protected:
+        /**
+         * \brief Get a movie synopsis using cache.
+         * 
+         * \param title Title of the movie.
+         * \return Synopsis if found from cache, empty optional otherwise.
+         */
+        std::optional<std::string> get_synopsis_using_cache(
+            const std::string& title);
+
     private:
         /// Map from title to cached synopsis.
         std::unordered_map<std::string, std::string> _cache;
@@ -165,6 +229,8 @@ namespace core {
         const size_t _cache_size;
     };
 
+
+    // --------------------------------------------------------------------
 
     /**
      * \brief Catalog with a paged LRU cache for synopses.
@@ -190,13 +256,10 @@ namespace core {
         PagedCachedCatalog(const std::string &filename, size_t cache_size);
 
         /**
-         * \brief Get a movie synopsis using paged cache.
-         * 
-         * \param title Title of the movie.
-         * \return Synopsis if found, empty optional otherwise.
+         * \brief Add a movie to the catalog.
+         * \param m Movie to add.
          */
-        std::optional<std::string> get_synopsis_using_cache(
-            const std::string& title);
+        void add(std::unique_ptr<data::Movie> m) override;
 
         /**
          * \brief Check if a movie synopsis is cached (page-based).
@@ -205,6 +268,16 @@ namespace core {
          * \return True if cached, false otherwise.
          */
         bool is_cached(const std::string& title);
+
+    protected:
+        /**
+         * \brief Get a movie synopsis using cache.
+         * 
+         * \param title Title of the movie.
+         * \return Synopsis if found from cache, empty optional otherwise.
+         */
+        std::optional<std::string> get_synopsis_using_cache(
+            const std::string& title);
 
     private:
         /**
