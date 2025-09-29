@@ -50,6 +50,8 @@ add_library(core STATIC ${CORE_SOURCES})
 
 ###### TESTS ######
 
+add_library(tests STATIC tests/utils.cpp)
+
 enable_testing()
 set(CORE_TESTS
     core/test_data
@@ -64,12 +66,12 @@ set(EXTRA_CORE_TESTS
     core/test_media_manager
 )
 
-find_program(VALGRIND_EXECUTABLE valgrind)
+
 foreach(T IN LISTS CORE_TESTS EXTRA_CORE_TESTS)
     string(REPLACE "/" "_" T_NORM ${T})
-    add_executable(${T_NORM} tests/${T}.cpp)
-    target_link_libraries(${T_NORM} PRIVATE core)
     string(REGEX REPLACE "/.*" "" LABEL ${T})
+    add_executable(${T_NORM} tests/${T}.cpp)
+    target_link_libraries(${T_NORM} PRIVATE ${LABEL} tests)
     add_test(NAME ${T} COMMAND ./${T_NORM})
     set_tests_properties(${T} PROPERTIES LABELS ${LABEL})
 endforeach()

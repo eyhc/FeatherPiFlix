@@ -6,44 +6,19 @@
 #include <iostream>
 #include <cassert>
 
+#include "../utils.h"
+
 using namespace std;
 
 int main(void) {
-    curl_global_init(CURL_GLOBAL_ALL);
-    
     const string url = 
         "https://i.pinimg.com/originals/16/4b/e5/"
         "164be50616ddf5d05775930ee4b4b618.jpg";
 
-    CURLcode res_code = CURLE_FAILED_INIT;
-    CURL *curl = curl_easy_init();
-    string result;
+    const auto res = test::get_data(url);
 
-    if (!curl) return 1;
-
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-        static_cast<curl_write_callback>([](
-            char *contents, size_t size, size_t nmemb, void *userdata
-        ) -> size_t {
-            auto *data = static_cast<std::string*>(userdata);
-            data->append(contents, size * nmemb);
-            return size * nmemb;
-        }));
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result);
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10);
-
-    res_code = curl_easy_perform(curl);
-    if (res_code != CURLE_OK) {
-        curl_global_cleanup();
-        return 2;
-    }
-
-    curl_easy_cleanup(curl);
-    curl_global_cleanup();
-
-    ofstream fout("./src_temp.jpg");
-    fout << result;
+    ofstream fout("./src_temp.jpg", std::ios::binary);
+    fout.write(reinterpret_cast<const char*>(res.data()), res.size());
     fout.close();
 
     auto s = 
