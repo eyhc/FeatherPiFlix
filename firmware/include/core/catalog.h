@@ -133,7 +133,16 @@ namespace core {
          * \brief  Get a list of all movies in the catalog.
          * \return Vector of raw references to movies (non-owning).
          */
-        std::vector<data::movie_ref> all_movies();
+        std::vector<data::movie_ref> all_movies() const;
+
+        /**
+         * \brief Get a sublist of movies in the catalog.
+         * \param offset Starting position.
+         * \param count  Maximum number of movies to return.
+         * \return Vector of raw references to movies (non-owning).
+         */
+        std::vector<data::movie_ref> movies_slice(
+            size_t offset, size_t count) const;
 
         /**
          * \brief  Get a movie by title.
@@ -141,7 +150,18 @@ namespace core {
          * \return Reference to the movie (non-owning), or empty optional if 
          *         not found.
          */
-        std::optional<data::movie_ref> get_movie(const std::string &title) const;
+        std::optional<data::movie_ref> get_movie(
+            const std::string &title) const;
+
+        /**
+         * \brief  Check if a movie exists.
+         * \param  title Title of the movie.
+         * \return True if a movie exists in the catalog, false otherwise.
+         */
+        bool exists(const std::string &title) const;
+
+        /// Virtual destructor for safe polymorphic deletion.
+        virtual ~BasicCatalog() = default;
 
     protected:
         /**

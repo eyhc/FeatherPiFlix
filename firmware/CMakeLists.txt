@@ -42,9 +42,11 @@ set(CORE_SOURCES
     src/core/sort.cpp
     src/core/img_format.cpp
     src/core/search.cpp
+    src/core/media_manager.cpp
 )
 
 add_library(core STATIC ${CORE_SOURCES})
+
 
 ###### TESTS ######
 
@@ -56,11 +58,14 @@ set(CORE_TESTS
     core/test_sort 
     core/test_selection
     core/test_img_format
+)
+set(EXTRA_CORE_TESTS
     core/test_search
+    core/test_media_manager
 )
 
 find_program(VALGRIND_EXECUTABLE valgrind)
-foreach(T IN LISTS CORE_TESTS)
+foreach(T IN LISTS CORE_TESTS EXTRA_CORE_TESTS)
     string(REPLACE "/" "_" T_NORM ${T})
     add_executable(${T_NORM} tests/${T}.cpp)
     target_link_libraries(${T_NORM} PRIVATE core)
@@ -70,15 +75,17 @@ foreach(T IN LISTS CORE_TESTS)
 endforeach()
 
 find_program(VALGRIND_EXECUTABLE valgrind)
-foreach(T IN LISTS CORE_TESTS)
-    if(VALGRIND_EXECUTABLE AND NOT T STREQUAL "core/test_search")
+if(VALGRIND_EXECUTABLE)
+    foreach(T IN LISTS CORE_TESTS)
         string(REGEX REPLACE "/" "_" T_EXEC ${T})
         add_test(NAME valgrind_${T_EXEC}
                  COMMAND ${VALGRIND_EXECUTABLE} --leak-check=full
                  --error-exitcode=2 ./${T_EXEC})
-        set_tests_properties(valgrind_${T_EXEC} PROPERTIES LABELS valgrind)
-    endif()
-endforeach()
+        string(REGEX REPLACE "/.*" "" LABEL ${T})
+        set_tests_properties(valgrind_${T_EXEC} PROPERTIES 
+                             LABELS valgrind_${LABEL})
+    endforeach()
+endif()
 
 
 ###### MAIN PROGRAM #####

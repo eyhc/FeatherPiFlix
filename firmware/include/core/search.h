@@ -120,7 +120,7 @@ namespace core::search {
          *         score for each matching document.
          */
         std::vector<std::pair<std::string, double>> 
-            search(const std::string &query, size_t max_results = 10);
+            search(const std::string &query, size_t max_results = 10) const;
 
     private:
         /// Path to the Xapian database

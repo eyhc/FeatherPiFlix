@@ -18,7 +18,11 @@ void test_basic_catalog() {
     unique_ptr<data::Movie> m5 = make_unique<data::Movie>(
         "f5", 0, "", "", "", "", 0, "", data::Cover(), "");
 
+    data::Movie* m1_ptr = m1.get();
+    data::Movie* m2_ptr = m2.get();
     data::Movie* m3_ptr = m3.get();
+    data::Movie* m4_ptr = m4.get();
+    data::Movie* m5_ptr = m5.get();
 
     BasicCatalog c;
     c.add(move(m1));
@@ -27,6 +31,20 @@ void test_basic_catalog() {
     c.add(move(m4));
     c.add(move(m5));
     c.save("./temp.csv");
+
+    vector<data::movie_ref> vm = c.movies_slice(0, 3);
+    assert(vm.size() == 3);
+    assert(&vm[0].get() == m1_ptr);
+    assert(&vm[1].get() == m2_ptr);
+    assert(&vm[2].get() == m3_ptr);
+
+    vm = c.movies_slice(3, 3);
+    assert(vm.size() == 2);
+    assert(&vm[0].get() == m4_ptr);
+    assert(&vm[1].get() == m5_ptr);
+
+    vm = c.movies_slice(6, 3);
+    assert(vm.size() == 0);
 
     assert(c.size() == 5);
     assert(c.all_movies().at(1).get().title() == "f2");

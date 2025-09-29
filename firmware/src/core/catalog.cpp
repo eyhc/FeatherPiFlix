@@ -183,7 +183,7 @@ void BasicCatalog::remove(const string &title) {
 
 size_t BasicCatalog::size() const { return _data.size(); }
 
-std::optional<size_t> BasicCatalog::get_index(const string &title) const {
+optional<size_t> BasicCatalog::get_index(const string &title) const {
     for (size_t i = 0; i < _data.size(); i++) {
         if (_data[i].get()->title() == title) {
             return i;
@@ -198,19 +198,38 @@ optional<data::movie_ref> BasicCatalog::get_movie(
     return ref(*(_data.at(index)));
 }
 
+bool BasicCatalog::exists(const string &title) const {
+    return get_index(title).has_value();
+}
+
 optional<data::movie_ref> BasicCatalog::get_movie(
-    const std::string &title
+    const string &title
 ) const {
     optional<size_t> index = get_index(title);
     if (!index.has_value()) return nullopt;
     else return get_movie(index.value());
 }
 
-vector<data::movie_ref> BasicCatalog::all_movies() {
+vector<data::movie_ref> BasicCatalog::movies_slice(
+    size_t offset, size_t count
+) const {
+    vector<data::movie_ref> result;
+    if (offset >= _data.size()) return result;
+
+    size_t end = min(offset + count, _data.size());
+    result.reserve(end - offset);
+
+    for (size_t i = offset; i < end; i++)
+        result.push_back(ref(*_data[i]));
+
+    return result;
+}
+
+vector<data::movie_ref> BasicCatalog::all_movies() const {
     vector<data::movie_ref> v;
-    for (const auto &movie: _data) {
+    v.reserve(_data.size());
+    for (const auto &movie: _data)
         v.push_back(ref(*movie));
-    }
     return v;
 }
 

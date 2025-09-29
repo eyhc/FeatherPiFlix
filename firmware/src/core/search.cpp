@@ -69,7 +69,7 @@ void search::Indexer::clear() {
 
 vector<pair<string, double>> search::Indexer::search(
     const string &query_str, size_t max_results
-) {
+) const {
     vector<pair<string, double>> results;
 
     // Query parser
