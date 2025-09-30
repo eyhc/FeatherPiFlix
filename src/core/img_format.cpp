@@ -20,10 +20,8 @@ data::Cover image_format::create_covers (
     gdImagePtr squared = resize_exact(src, 240, 240);
 
     // compute image paths
-    filesystem::path standard_dest = output_dir;
-    standard_dest.append(output_name + ".jpg");
-    filesystem::path square_dest = output_dir;
-    square_dest.append(output_name + "_square.jpg");
+    filesystem::path standard_dest = output_dir / (output_name + ".jpg");
+    filesystem::path square_dest = output_dir / (output_name + "_square.jpg");
 
     // open output files
     FILE *fout = fopen(standard_dest.c_str(), "w");

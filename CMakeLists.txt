@@ -26,6 +26,7 @@ SET(REQUIRED_LIBS
     gd
     curl
     xapian
+    microhttpd
 )
 
 foreach(LIB IN LISTS REQUIRED_LIBS)
@@ -45,12 +46,18 @@ set(CORE_SOURCES
     src/core/media_manager.cpp
 )
 
+set(SERVER_SOURCES
+    src/server/http_server.cpp
+)
+
 add_library(core STATIC ${CORE_SOURCES})
+add_library(server STATIC ${SERVER_SOURCES})
 
 
 ###### TESTS ######
 
 add_library(tests STATIC tests/utils.cpp)
+target_link_libraries(tests PRIVATE core)
 
 enable_testing()
 set(CORE_TESTS
@@ -65,9 +72,12 @@ set(EXTRA_CORE_TESTS
     core/test_search
     core/test_media_manager
 )
+set(SERVER_TESTS
+    server/test_http_server
+)
 
 
-foreach(T IN LISTS CORE_TESTS EXTRA_CORE_TESTS)
+foreach(T IN LISTS CORE_TESTS EXTRA_CORE_TESTS SERVER_TESTS)
     string(REPLACE "/" "_" T_NORM ${T})
     string(REGEX REPLACE "/.*" "" LABEL ${T})
     add_executable(${T_NORM} tests/${T}.cpp)
@@ -78,13 +88,13 @@ endforeach()
 
 find_program(VALGRIND_EXECUTABLE valgrind)
 if(VALGRIND_EXECUTABLE)
-    foreach(T IN LISTS CORE_TESTS)
+    foreach(T IN LISTS CORE_TESTS SERVER_TESTS)
         string(REGEX REPLACE "/" "_" T_EXEC ${T})
-        add_test(NAME valgrind_${T_EXEC}
+        add_test(NAME valgrind_${T}
                  COMMAND ${VALGRIND_EXECUTABLE} --leak-check=full
                  --error-exitcode=2 ./${T_EXEC})
         string(REGEX REPLACE "/.*" "" LABEL ${T})
-        set_tests_properties(valgrind_${T_EXEC} PROPERTIES 
+        set_tests_properties(valgrind_${T} PROPERTIES 
                              LABELS valgrind_${LABEL})
     endforeach()
 endif()
