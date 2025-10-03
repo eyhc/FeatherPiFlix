@@ -42,7 +42,7 @@ namespace server {
             const char *upload_data,
             long unsigned int *upload_data_size,
             void **con_cls
-        );     
+        );
 
         // don't forger to free memory
         static MHD_Response* make_text_response(

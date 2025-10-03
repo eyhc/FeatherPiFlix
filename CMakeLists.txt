@@ -47,6 +47,7 @@ set(CORE_SOURCES
 )
 
 set(SERVER_SOURCES
+    src/server/router.cpp
     src/server/http_server.cpp
 )
 
@@ -74,6 +75,7 @@ set(EXTRA_CORE_TESTS
 )
 set(SERVER_TESTS
     server/test_http_server
+    server/test_router
 )
 
 
